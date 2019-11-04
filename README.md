@@ -17,6 +17,13 @@ El nivel será dinámico avanzando automáticamente en el plano Z. Los enemigos 
 ### Aspectos tecnicos
 Se ocuparan colliders para detectar los disparos, destruir los objetos y enemigos. 
 
+#### Librerías adicionales a usar
+- [Threejs-fps-controls](https://github.com/JamesMilnerUK/threejs-fps-controls)
+- [PointerLockControls](https://github.com/mrdoob/three.js/blob/master/examples/js/controls/PointerLockControls.js)
+- SFX Class
+- Tween
+
+
 ### Assets 
 [link](https://www.models-resource.com/nintendo_64/starfox64/)
 
