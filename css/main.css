@@ -1,0 +1,52 @@
+@charset "UTF-8";
+
+* {
+  font-family: Arial;
+  font-size: 20px;
+  font-style: italic;
+  margin: 0;
+}
+
+body {
+  color: rgb(10, 0, 0);
+}
+
+#container {
+  position: absolute;
+  color: white;
+}
+
+#title {
+  position: absolute;
+  font-size: 1.5em;
+  left: 20px;
+  top: 20px;
+}
+
+#time {
+  position: absolute;
+  font-size: 1em;
+  left: 25px;
+  top: 60px;
+}
+
+#life {
+  position: absolute;
+  font-size: 1em;
+  left: 25px;
+  top: 88px;
+}
+
+#start {
+  position: absolute;
+  padding: 0 25px;
+  font-size: 1em;
+  text-align: center;
+  left: 25px;
+  top: 120px;
+}
+
+#webglcanvas {
+  border: none;
+  background-color: #ffffff;
+}

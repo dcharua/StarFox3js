@@ -12,7 +12,15 @@ Vamos a replicar un nivel del juego de nintendo 64, Starfox. En éste el jugador
 La nave será controlada con el mouse con la posibilidad de moverte en X y Y, la nave dispara haciendo click en con el mouse.
 
 ### Modo de juego
-El nivel será dinámico avanzando automáticamente en el plano Z. Los enemigos irán apareciendo y el jugador tendrá una cantidad finita de vida. Al final del nivel el jugador se enfrentará a un enemigo final, el jefe, el cual será mucho más difícil de derrotar. 
+El modo de juego sera infinty runner, en el cual el jugador tiene vida finita pero el mapa es infinito, va incrementando la dificultad al avanzar el nivel, existiran diferentes tipos de enemigos, con movimientos y poderes distintos, asi como obstaculos que deberan ser evitados. El jugador tendra un score basando en los enemigos destruidos y los power ups adquiridos.
+#### Jugador
+![alt text](images/starFox.png)
+
+#### Enemigos y obstaculos
+La escena sera en el espacio con distintas naves enemigas y obstaculos.
+![alt text](images/enemy.png)
+
+
 
 ### Aspectos tecnicos
 Se ocuparan colliders para detectar los disparos, destruir los objetos y enemigos. 
