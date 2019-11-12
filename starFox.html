@@ -3,13 +3,10 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title>Star fox</title>
-
-    <link rel="stylesheet" href="../libs/jquery-ui/jquery-ui.css" />
-    <link rel="stylesheet" href="../libs/colorpicker/css/colorpicker.css" />
     <link rel="stylesheet" href="css/main.css" />
 
     <script src="./libs/jquery-3.4.1/jquery-3.4.1.min.js"></script>
-    <script src="./libs/jquery-ui/jquery-ui.js"></script>
+
 
     <script src="./libs/three.js/three.js"></script>
     <script src="./libs/three.js/controls/OrbitControls.js"></script>
@@ -26,38 +23,46 @@
 
     <script src="starFox.js"></script>
 
-    <script type="text/javascript">
-      function initControls() {
-        $("input[name=start]").click(
-          function() {
-            startGame();
-          }
-        );
-      }
-    </script>
+   
+  <script type="text/javascript">
+  function initControls() {
+    $("#play").click(() => startGame());
+  }
 
-    <script type="text/javascript">
-      $(document).ready(
-        function() {
+  $(document).ready(
+    function() {
+      var canvas = document.getElementById("webglcanvas");
 
-          var canvas = document.getElementById("webglcanvas");
+      // create the scene
+      createScene(canvas);
 
-          // create the scene
-          createScene(canvas);
+      // initialize the controls
+      initControls();
 
-          // initialize the controls
-          initControls();
-
-          // Run the run loop
-          run();
-        }
-      );
-    </script>
+      // Run the run loop
+      run();
+    }
+  );
+  </script>
 
   </head>
 
   <body>
-
+    <div id="container">
+      <canvas id="webglcanvas"></canvas>
+      <div class="game-controls">
+        <div id="time">Time: 60 seconds</div>
+        <div id="lives">Lives:         &#9829;         &#9829;         &#9829;</div>
+        <div id="score">Score: 0 </div>
+        <div id="high_score">High Score: 0 </div>
+        <div>
+          <label for="difficulty">Difficulty 1-10 </label>
+          <input id="difficulty" name="difficulty" onchange="setDifficulty()" type="number" max="10" min="1" step="1" value="5">
+        </div>
+        <button id="play">Play</button>
+      </div>
+    </div>
   </body>
+
 
 </html>
