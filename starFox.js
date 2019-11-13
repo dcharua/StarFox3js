@@ -3,7 +3,9 @@ var renderer = null,
   scene = null,
   camera = null,
   root = null,
-  group = null;
+  group = null,
+  starGeo = null,
+  stars = null;
 
 // VARIABLES FOR THE GAME TIME
 var gameSettings = {
@@ -182,6 +184,18 @@ function animate() {
         }
       }
     })
+
+    // Stars
+    starGeo.vertices.forEach(p => {
+      p.velocity += p.acceleration;
+      p.z += p.velocity;
+      if(p.z > 200){
+        p.z = -200;
+        p.velocity = 0;
+      }
+    });
+    starGeo.verticesNeedUpdate = true;
+    stars.rotation.z -= 0.002;
   }
 }
 
@@ -359,4 +373,26 @@ function createScene(canvas) {
     gameSettings.highScore = high_score;
     document.getElementById("high_score").innerHTML = `High score: ${high_score.toString()}`;
   }
+
+  // Stars
+  starGeo = new THREE.Geometry();
+  for(let i = 0; i < 6000; i++){
+    star = new THREE.Vector3(
+      Math.random() * 600 - 300,
+      Math.random() * 600 - 300,
+      Math.random() * 600 - 300
+    );
+    star.velocity = 0;
+    star.acceleration = 0.02;
+    starGeo.vertices.push(star);
+  }
+  let sprite = new THREE.TextureLoader().load('images/star.png');
+  let starMaterial = new THREE.PointsMaterial({
+    color: 0xffffff,
+    size: 0.7,
+    map: sprite
+  });
+
+  stars = new THREE.Points(starGeo, starMaterial);
+  scene.add(stars);
 }
