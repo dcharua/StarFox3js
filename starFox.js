@@ -63,7 +63,7 @@ function loadEnemy() {
   mtlLoader.load("models/Catspaw/Catspaw.mtl", function (materials) {
     materials.preload();
     objLoader.setMaterials(materials);
-    objLoader.load("models/Catspaw/Catspaw.mtl".replace('.mtl', '.obj'), function (object) {
+    objLoader.load("models/Catspaw/Catspaw.obj", function (object) {
       object.scale.set(6, 6, 6);
       object.traverse(function (child) {
         if (child.isMesh) {
@@ -204,7 +204,7 @@ function makeEnemies() {
   var id = 0;
   enemy.enemyMaker = window.setInterval(function () {
     if (!gameSettings.gameOver) {
-      var clone = enemy.object;
+      var clone = enemy.object.clone();
       // we set randomly in x by its right and left max, and in the z start line
       clone.position.set(Math.floor(Math.random() * (enemy.right - enemy.left + 1)) + enemy.left, -5, enemy.start);
       scene.add(clone);
@@ -224,42 +224,28 @@ function onDocumentKeyDown(event) {
 
   // BOTON ARRIBA
   if (keyCode == 38) {
-    if (player.object.position.y < maxY) {
-      player.object.position.y += moves;
+      player.object.position.y += 1;
       player.object.rotation.x = Math.PI / 30;
-    } else {
-      player.object.rotation.x = 0;
-    }
   }
 
   // BOTON ABAJO
   else if (keyCode == 40) {
-    if (player.object.position.y > minY) {
-      player.object.position.y -= moves;
+      player.object.position.y -= 1;
       player.object.rotation.x = -Math.PI / 5;
-    } else {
-      player.object.rotation.x = 0;
-    }
   }
 
   // BOTON IZQUIERDA
   else if (keyCode == 37) {
-    if (player.object.position.x > minX) {
-      player.object.position.x -= moves;
+      player.object.position.x -= 1;
       player.object.rotation.z = -Math.PI / 5;
-    } else {
-      player.object.rotation.z = 0;
-    }
+
   }
 
   // BOTON DERECHA
   else if (keyCode == 39) {
-    if (player.object.position.x < maxX) {
-      player.object.position.x += moves;
+      player.object.position.x += 1;
       player.object.rotation.z = Math.PI / 5;
-    } else {
-      player.object.rotation.z = 0;
-    }
+
   }
 }
 
