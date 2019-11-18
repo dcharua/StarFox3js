@@ -5,6 +5,7 @@ var renderer = null,
   root = null,
   group = null,
   starGeo = null,
+  playerAnimator = null,
   stars = null;
 
 // VARIABLES FOR THE GAME TIME
@@ -22,6 +23,13 @@ var gameSettings = {
 player = {
   object: null
 }
+
+var target = new THREE.Vector3();
+
+var mouseX = 0, mouseY = 0;
+
+var windowHalfX = window.innerWidth / 2;
+var windowHalfY = window.innerHeight / 2;
 
 // Robot settings object
 var enemy = {
@@ -45,7 +53,10 @@ function loadPlayer() {
     materials.preload();
     objLoader.setMaterials(materials);
     objLoader.load("models/Arwing.obj".replace('.mtl', '.obj'), function (object) {
+      object.rotation.y = 3.1;
       object.scale.set(6, 6, 6);
+      object.position.y = -10
+      object.position.z = 50
       object.traverse(function (child) {
         if (child.isMesh) {
           child.castShadow = true;
@@ -162,7 +173,7 @@ function animate() {
     enemy.enemies.forEach((enemy, index) => {
       // update the z position forward if not dead
       if (!enemy.dead) {
-        enemy.position.z += deltat * 0.01;
+        enemy.position.z += deltat * 0.05;
         enemy.rotation.x += Math.random() * 0.01  - 0.005;
         enemy.rotation.y += Math.random() * 0.01  - 0.005;
         enemy.rotation.z += Math.random() * 0.01  - 0.005;
@@ -197,6 +208,14 @@ function animate() {
     starGeo.verticesNeedUpdate = true;
     stars.rotation.z -= 0.002;
   }
+
+  // Playr look at mouse
+
+  target.x += ( mouseX - target.x ) * .02;
+  // target.y += ( - mouseY - target.y ) * .02;
+  target.z = -50; // assuming the camera is located at ( 0, 0, z );
+
+  player.object.lookAt( target );
 }
 
 // function to make new robots every n second
@@ -222,29 +241,18 @@ function setDifficulty() {
 function onDocumentKeyDown(event) {
   var keyCode = event.which;
 
-  // BOTON ARRIBA
-  if (keyCode == 38) {
-      player.object.position.y += 1;
-      player.object.rotation.x = Math.PI / 30;
-  }
-
-  // BOTON ABAJO
-  else if (keyCode == 40) {
-      player.object.position.y -= 1;
-      player.object.rotation.x = -Math.PI / 5;
-  }
-
   // BOTON IZQUIERDA
-  else if (keyCode == 37) {
-      player.object.position.x -= 1;
-      player.object.rotation.z = -Math.PI / 5;
-
+  if (keyCode == 37) {
+      player.object.position.x -= 3;
+      // player.object.rotation.z = -Math.PI / 5;
+      // playerAnimator[2].start();
   }
 
   // BOTON DERECHA
   else if (keyCode == 39) {
-      player.object.position.x += 1;
-      player.object.rotation.z = Math.PI / 5;
+      player.object.position.x += 3;
+      // player.object.rotation.z = Math.PI / 5;
+      // playerAnimator[3].start();
 
   }
 }
@@ -350,8 +358,9 @@ function createScene(canvas) {
   scene.add(root);
 
   window.addEventListener('resize', onWindowResize);
+  window.addEventListener('mousemove', onMouseMove)
   document.addEventListener("keydown", onDocumentKeyDown, false);
-  document.addEventListener("keyup", onDocumentKeyUp, false);
+  // document.addEventListener("keyup", onDocumentKeyUp, false);
 
   // get high score
   let high_score = JSON.parse(window.localStorage.getItem('high_score'));
@@ -381,4 +390,13 @@ function createScene(canvas) {
 
   stars = new THREE.Points(starGeo, starMaterial);
   scene.add(stars);
+}
+
+function onMouseMove(event) {
+
+
+  mouseX = ( event.clientX - windowHalfX );
+  mouseY = ( event.clientY - windowHalfY );
+
+
 }
