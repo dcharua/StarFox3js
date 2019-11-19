@@ -5,7 +5,7 @@ var renderer = null,
   root = null,
   group = null,
   starGeo = null,
-  playerAnimator = null,
+  playerCollider = null,
   stars = null;
 
 // VARIABLES FOR THE GAME TIME
@@ -26,7 +26,7 @@ player = {
 
 var target = new THREE.Vector3();
 
-var mouseX = 0, mouseY = 0;
+var mouse = new THREE.Vector2();
 
 var windowHalfX = window.innerWidth / 2;
 var windowHalfY = window.innerHeight / 2;
@@ -38,8 +38,15 @@ var enemy = {
   left: -150,
   right: 150,
   start: -200,
-  end: 100,
+  end: -20,
   enemyMaker: null
+}
+
+var bullet = {
+  object: null,
+  id: 0,
+  bullets: [],
+  end: -200
 }
 
 // Loaders
@@ -53,7 +60,8 @@ function loadPlayer() {
     materials.preload();
     objLoader.setMaterials(materials);
     objLoader.load("models/Arwing.obj".replace('.mtl', '.obj'), function (object) {
-      object.rotation.y = 3.1;
+      
+      object.rotation.y = Math.PI
       object.scale.set(6, 6, 6);
       object.position.y = -10
       object.position.z = 50
@@ -83,7 +91,22 @@ function loadEnemy() {
         }
       });
       enemy.object = object
-    }, null, null);
+    }, loadBullet, null);
+  });
+}
+
+function loadBullet() {
+  var loader = new THREE.FBXLoader();
+  loader.load('models/Bullet.fbx', function(object) {
+    object.scale.set(2, 2, 2);
+    object.rotation.x = -Math.PI / 2;
+    object.traverse(function(child) {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+    bullet.object = object;
   });
 }
 
@@ -169,30 +192,75 @@ function animate() {
     var deltat = now - currentTime;
     currentTime = now;
 
+    // Collider to player
+    playerCollider = new THREE.Box3().setFromObject(player.object);
+
     // for each robot in the array
-    enemy.enemies.forEach((enemy, index) => {
+    enemy.enemies.forEach((e, index) => {
+      // Collider to enemy
+      e.collider = new THREE.Box3().setFromObject(e);
+
+      // Check if enemy got hit
+      bullet.bullets.forEach((b, i) => {
+        b.collider = new THREE.Box3().setFromObject(b);
+
+        if (e.collider.intersectsBox(b.collider)) {
+          if(!e.dead){
+            e.dead = true;
+            gameSettings.score += 1;
+            document.getElementById("score").innerHTML = 'Score: ' + gameSettings.score;
+
+            // remove bullet
+            scene.remove(b);
+            bullet.bullets.splice(i, 1);
+          }
+        }
+      });
+
       // update the z position forward if not dead
-      if (!enemy.dead) {
-        enemy.position.z += deltat * 0.05;
-        enemy.rotation.x += Math.random() * 0.01  - 0.005;
-        enemy.rotation.y += Math.random() * 0.01  - 0.005;
-        enemy.rotation.z += Math.random() * 0.01  - 0.005;
+      if (!e.dead) {
+        e.position.z += deltat * 0.05;
+        e.rotation.x += Math.random() * 0.01  - 0.005;
+        e.rotation.y += Math.random() * 0.01  - 0.005;
+        e.rotation.z += Math.random() * 0.01  - 0.005;
+      }else{
+        e.position.y -= deltat * 0.05;
+        e.rotation.x += Math.random() * 0.02;
+        e.rotation.y += Math.random() * 0.02;
+        e.rotation.z += Math.random() * 0.02;
       }
       // enemy gets to the end line
-      if (enemy.position.z >= enemy.end) {
-        scene.remove(enemy);
+      if (e.position.y <= -50 || e.position.z >= 100) {
+        scene.remove(e);
         enemy.enemies.splice(index, 1);
-        gameSettings.lives -= 1;
-        document.getElementById("lives").innerHTML = 'Lives: ';
-        Array.from({
-          length: gameSettings.lives
-        }, () => document.getElementById("lives").innerHTML += ' &#9829;');
-        if (gameSettings.lives == 0) {
-          alert("You have lost")
-          gameSettings.gameOver = true;
-          resetGame();
-          return;
+      }
+
+      if (playerCollider.intersectsBox(e.collider)) {
+        if(!e.dead){
+          e.dead = true;
+          gameSettings.lives -= 1;
+          document.getElementById("lives").innerHTML = 'Lives: ';
+          Array.from({
+            length: gameSettings.lives
+          }, () => document.getElementById("lives").innerHTML += ' &#9829;');
+          if (gameSettings.lives == 0) {
+            alert("You have lost")
+            gameSettings.gameOver = true;
+            resetGame();
+            return;
+          }
         }
+      }
+    })
+
+    // animate bullets
+    bullet.bullets.forEach((b, index) => {
+      b.position.z -= Math.cos(b.angle) * deltat * 0.08;
+      b.position.x -= Math.sin(b.angle) * deltat * 0.08;
+
+      if (b.position.z <= bullet.end) {
+        scene.remove(b);
+        bullet.bullets.splice(index, 1);
       }
     })
 
@@ -211,11 +279,16 @@ function animate() {
 
   // Playr look at mouse
 
-  target.x += ( mouseX - target.x ) * .02;
-  // target.y += ( - mouseY - target.y ) * .02;
-  target.z = -50; // assuming the camera is located at ( 0, 0, z );
+  target.x = (player.object.position.x / 100) - mouse.x;
+  target.y = (player.object.position.y / 100) - mouse.y;
+  var oa = (target.y)/(target.x)
+  // console.log(oa)
+  var rotationPlayer = Math.atan(oa) + Math.PI;
 
-  player.object.lookAt( target );
+  // console.log(rotationPlayer);
+
+  // Get angle
+  player.object.rotation.y = rotationPlayer;
 }
 
 // function to make new robots every n second
@@ -233,6 +306,20 @@ function makeEnemies() {
   }, 5000 / gameSettings.difficulty);
 }
 
+// function to player shoot a bullet
+function shoot() {
+
+  if (!gameSettings.gameOver) {
+    var clone = cloneFbx(bullet.object);
+    clone.position.set(player.object.position.x, player.object.position.y, player.object.position.z);
+    clone.angle = player.object.rotation.y + Math.PI;
+    scene.add(clone);
+    clone.id = bullet.id++;
+    bullet.bullets.push(clone);
+
+  }
+}
+
 // function to change game difficulty
 function setDifficulty() {
   gameSettings.difficulty = document.getElementById("difficulty").value;
@@ -242,14 +329,14 @@ function onDocumentKeyDown(event) {
   var keyCode = event.which;
 
   // BOTON IZQUIERDA
-  if (keyCode == 37) {
+  if (keyCode == 37 && player.object.position.x > -100) {
       player.object.position.x -= 3;
       // player.object.rotation.z = -Math.PI / 5;
       // playerAnimator[2].start();
   }
 
   // BOTON DERECHA
-  else if (keyCode == 39) {
+  else if (keyCode == 39 && player.object.position.x < 100) {
       player.object.position.x += 3;
       // player.object.rotation.z = Math.PI / 5;
       // playerAnimator[3].start();
@@ -358,8 +445,10 @@ function createScene(canvas) {
   scene.add(root);
 
   window.addEventListener('resize', onWindowResize);
-  window.addEventListener('mousemove', onMouseMove)
+  window.addEventListener('mousemove', onMouseMove);
+  window.addEventListener("click", onMouseClick);
   document.addEventListener("keydown", onDocumentKeyDown, false);
+  
   // document.addEventListener("keyup", onDocumentKeyUp, false);
 
   // get high score
@@ -394,9 +483,16 @@ function createScene(canvas) {
 
 function onMouseMove(event) {
 
+  mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+  mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 
-  mouseX = ( event.clientX - windowHalfX );
-  mouseY = ( event.clientY - windowHalfY );
 
+}
 
+function onMouseClick(event) {
+
+  if(!gameSettings.gameOver){
+    event.preventDefault()
+    shoot();
+  }
 }
