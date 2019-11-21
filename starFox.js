@@ -46,7 +46,8 @@ var bullet = {
   object: null,
   id: 0,
   bullets: [],
-  end: -200
+  end: -200,
+  velocity: 0.12
 }
 
 // Loaders
@@ -255,8 +256,8 @@ function animate() {
 
     // animate bullets
     bullet.bullets.forEach((b, index) => {
-      b.position.z -= Math.cos(b.angle) * deltat * 0.08;
-      b.position.x -= Math.sin(b.angle) * deltat * 0.08;
+      b.position.z -= Math.cos(b.angle) * deltat * bullet.velocity;
+      b.position.x -= Math.sin(b.angle) * deltat * bullet.velocity;
 
       if (b.position.z <= bullet.end) {
         scene.remove(b);
@@ -278,17 +279,44 @@ function animate() {
   }
 
   // Playr look at mouse
-
   target.x = (player.object.position.x / 100) - mouse.x;
   target.y = (player.object.position.y / 100) - mouse.y;
-  var oa = (target.y)/(target.x)
-  // console.log(oa)
-  var rotationPlayer = Math.atan(oa) + Math.PI;
 
-  // console.log(rotationPlayer);
+  // var hipotenuse = Math.sqrt(Math.pow(target.y, 2) + Math.pow(target.x, 2));
+
+  // var oa = (target.y)/(target.x)
+  // var oh = target.y / hipotenuse;
+  // var ah = target.x / hipotenuse;
+
+  var rotationPlayer = atan(-target.y, -target.x) + Math.PI / 2;
+  // var rotationPlayer = Math.asin(oh) + Math.PI;
+  // var rotationPlayer = Math.acos(ah);
 
   // Get angle
   player.object.rotation.y = rotationPlayer;
+}
+
+// function for calculating atan
+function atan(y,x){
+  if (x>0){
+      v = Math.atan(y/x);
+  }
+  if (y>=0 && x<0){
+      v = Math.PI+Math.atan(y/x);
+  }
+  if (y<0 & x<0){
+      v = -Math.PI+Math.atan(y/x);
+  }
+  if (y>0 & x==0){
+      v = Math.PI/2;
+  }
+  if (y<0 && x==0){
+      v = -Math.PI/2;
+  }
+  if (v<0){
+      v=v+2*Math.PI;
+  }
+  return v
 }
 
 // function to make new robots every n second
@@ -485,7 +513,6 @@ function onMouseMove(event) {
 
   mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
   mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-
 
 }
 
