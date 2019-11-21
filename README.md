@@ -35,3 +35,12 @@ Se ocuparan colliders para detectar los disparos, destruir los objetos y enemigo
 ### Assets 
 [link](https://www.models-resource.com/nintendo_64/starfox64/)
 
+### Avances 2
+- powerups
+- arreglar rotación
+- obstaculos
+- 3 tipos de enemigos, avanzar hacia recto pero tiene 3 balas de vida, otro se mueve hacia el jugador, otro evade
+- amentando la dificultad con el tiempo
+- 100 de vida
+- interfaz con menu 
+- animacion de explosion 
