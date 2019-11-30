@@ -30,22 +30,23 @@ var windowHalfY = window.innerHeight / 2;
 // Robot settings object
 var gameObjects = {
   player: null,
-  rings: null,
+  ring: null,
   powerUp: null,
   enemy1: null,
+  enemy2: null,
   objects: [],
   left: -150,
   right: 150,
   start: -200,
   end: -20,
   enemyMaker: null,
-  bullet : {
+  bullet: {
     object: null,
     id: 0,
     bullets: [],
     end: -200,
     velocity: 0.12
-  }  
+  }
 }
 var id = 0;
 
@@ -57,30 +58,32 @@ var currentTime = Date.now();
 function loadMTL(mtl, objPath, scale) {
   var mtlLoader = new THREE.MTLLoader();
   var objLoader = new THREE.OBJLoader();
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     mtlLoader.load(mtl, (materials) => {
-    materials.preload();
-    objLoader.setMaterials(materials);
-     objLoader.load(objPath, (object) => {
-      object.scale.set(scale, scale, scale);
-      object.traverse(function (child) {
-        if (child.isMesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
-        }
-      });
-      resolve(object)
-    }, null, );
-  })});
+      console.log(materials)
+      materials.preload();
+      objLoader.setMaterials(materials);
+      objLoader.load(objPath, (object) => {
+        object.scale.set(scale, scale, scale);
+        object.traverse(function (child) {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+        });
+        resolve(object)
+      }, null, error => reject(error));
+    })
+  }, null, error => reject(error));
 }
 
 function loadBullet() {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     var loader = new THREE.FBXLoader();
-    loader.load('models/Bullet.fbx', function(object) {
+    loader.load('models/Bullet.fbx', object => {
       object.scale.set(2, 2, 2);
       object.rotation.x = -Math.PI / 2;
-      object.traverse(function(child) {
+      object.traverse(function (child) {
         if (child.isMesh) {
           child.castShadow = true;
           child.receiveShadow = true;
@@ -88,7 +91,8 @@ function loadBullet() {
       });
       gameObjects.bullet.object = object;
       resolve("done")
-  })});
+    })
+  }, null, error => reject(error));
 }
 
 // funtion to for gametime
@@ -128,7 +132,7 @@ function resetGame() {
 // funtion to start the game
 function startGame() {
   resetGame();
-  // remove robots from scene if any
+  // remove objects from scene if any
   gameObjects.objects.forEach(enemy => scene.remove(enemy));
   gameObjects.objects = [];
   // reset score time and lives in html
@@ -136,13 +140,13 @@ function startGame() {
   document.getElementById("time").innerText = `Time: ${gameSettings.playTime} seconds`;
   document.getElementById("live").innerHTML = `Live: ${gameSettings.live}`;
   document.getElementById("play").innerText = "Restart";
-  // start game - clock and robot making
+  // start game - 
   gameSettings.gameOver = false;
   clock();
   makeObjects();
 }
 
-// animation function to move robots foward
+// main function to animate and update game
 function animate() {
   // if player lost
   if (!gameSettings.gameOver) {
@@ -152,140 +156,204 @@ function animate() {
 
     // Collider to player
     playerCollider = new THREE.Box3().setFromObject(gameObjects.player);
-
-    // for each robot in the array
-    gameObjects.objects.forEach((e, index) => {
-      // Collider to enemy
-      e.collider = new THREE.Box3().setFromObject(e);
-
-      // Check if enemy got hit
-      gameObjects.bullet.bullets.forEach((b, i) => {
-        b.collider = new THREE.Box3().setFromObject(b);
-
-        if (e.collider.intersectsBox(b.collider)) {
-          if(!e.dead){
-            e.dead = true;
-            gameSettings.score += 1;
-            document.getElementById("score").innerHTML = 'Score: ' + gameSettings.score;
-
-            // remove bullet
-            scene.remove(b);
-            gameObjects.bullet.bullets.splice(i, 1);
-          }
-        }
-      });
-
-      // update the z position forward if not dead
-      if (!e.dead) {
-        e.position.z += deltat * 0.05;
-        e.rotation.x += Math.random() * 0.01  - 0.005;
-        e.rotation.y += Math.random() * 0.01  - 0.005;
-        e.rotation.z += Math.random() * 0.01  - 0.005;
-      }else{
-        e.position.y -= deltat * 0.05;
-        e.rotation.x += Math.random() * 0.02;
-        e.rotation.y += Math.random() * 0.02;
-        e.rotation.z += Math.random() * 0.02;
-      }
-      // enemy gets to the end line
-      if (e.position.y <= -50 || e.position.z >= 100) {
-        scene.remove(e);
-        gameObjects.objects.splice(index, 1);
-      }
-
-      if (playerCollider.intersectsBox(e.collider)) {
-        if(!e.dead){
-          e.dead = true;
-          gameSettings.live -= 1;
-          document.getElementById("live").innerHTML = `Live: ${gameSettings.live}`
-          if (gameSettings.live == 0) {
-            alert("You have lost")
-            gameSettings.gameOver = true;
-            resetGame();
-            return;
-          }
-        }
-      }
-    })
-
+    // we update  each object in the array
+    updateObject(deltat);
     // animate bullets
-    gameObjects.bullet.bullets.forEach((b, index) => {
-      b.position.z -= Math.cos(b.angle) * deltat * gameObjects.bullet.velocity;
-      b.position.x -= Math.sin(b.angle) * deltat * gameObjects.bullet.velocity;
-
-      if (b.position.z <= gameObjects.bullet.end) {
-        scene.remove(b);
-        gameObjects.bullet.bullets.splice(index, 1);
-      }
-    })
-
+    updateBullets(deltat);
     // Stars
-    starGeo.vertices.forEach(p => {
-      p.velocity += p.acceleration;
-      p.z += p.velocity;
-      if(p.z > 200){
-        p.z = -200;
-        p.velocity = 0;
+    updateStars();
+    // Playerr look at mouse
+    target.x = (gameObjects.player.position.x / 100) - mouse.x;
+    target.y = (gameObjects.player.position.y / 100) - mouse.y;
+
+    // var hipotenuse = Math.sqrt(Math.pow(target.y, 2) + Math.pow(target.x, 2));
+
+    // var oa = (target.y)/(target.x)
+    // var oh = target.y / hipotenuse;
+    // var ah = target.x / hipotenuse;
+
+    var rotationPlayer = atan(-target.y, -target.x) + Math.PI / 2;
+    // var rotationPlayer = Math.asin(oh) + Math.PI;
+    // var rotationPlayer = Math.acos(ah);
+
+    // Get angle
+    gameObjects.player.rotation.y = rotationPlayer;
+  }
+}
+
+function updateObject(deltat) {
+  gameObjects.objects.forEach((obj, index) => {
+    // Collider to enemy 
+    obj.collider = new THREE.Box3().setFromObject(obj);
+    switch (obj.type) {
+      case 'enemy1':
+        // Check if enemy got hit
+        checkBulletHit(obj);
+        // update the z position forward if not dead
+        if (!obj.dead) {
+          obj.position.z += deltat * 0.05;
+          obj.rotation.x += Math.random() * 0.01 - 0.005;
+          obj.rotation.y += Math.random() * 0.01 - 0.005;
+          obj.rotation.z += Math.random() * 0.01 - 0.005;
+          // TODO enemy fire bullet
+          enemyFire(obj);
+        } else {
+          obj.position.y -= deltat * 0.05;
+          obj.rotation.x += Math.random() * 0.02;
+          obj.rotation.y += Math.random() * 0.02;
+          obj.rotation.z += Math.random() * 0.02;
+        }
+        checkRemove(obj, index);
+        checkCollition(obj);
+        break;
+
+      case 'enemy2':
+        // Check if enemy got hit
+        checkBulletHit(obj)
+        // TODO animate different movement and dead
+        if (!obj.dead) {
+          obj.position.z += deltat * 0.06;
+          // TODO enemy fire bullet
+          enemyFire(obj);
+        } else {
+          obj.position.y -= deltat * 0.06;
+          obj.rotation.x += Math.random() * 0.02;
+          obj.rotation.y += Math.random() * 0.02;
+          obj.rotation.z += Math.random() * 0.02;
+        }
+        checkRemove(obj, index);
+        checkCollition(obj);
+        break;
+
+
+      case 'powerUp':
+        // Collider to enemy
+        obj.position.z += deltat * 0.03;
+        checkRemove(obj, index);
+        checkCollition(obj);
+        break;
+      
+      case 'ring':
+          // Collider to enemy
+          obj.position.z += deltat * 0.04;
+          checkRemove(obj, index);
+          checkCollition(obj);
+          break;
+    }
+  })
+}
+
+function checkRemove(obj, index) {
+  // enemy gets to the end line
+  if (obj.position.y <= -50 || obj.position.z >= 100) {
+    scene.remove(obj);
+    gameObjects.objects.splice(index, 1);
+  }
+}
+
+// function to check if player collition with object
+function checkCollition(obj) {
+  if (playerCollider.intersectsBox(obj.collider)) {
+    if (!obj.dead) {
+      obj.dead = true;
+      switch (obj.type) {
+        case 'enemy1':
+          gameSettings.live -= 5;
+          break;
+        case 'powerUp':
+          gameSettings.live += 5;
+          break;
+        case 'powerUp':
+          updateScore(10)
+          break;
       }
-    });
-    starGeo.verticesNeedUpdate = true;
-    stars.rotation.z -= 0.002;
+      updateLive();
+    }
   }
-
-  // Playr look at mouse
-  target.x = (gameObjects.player.position.x / 100) - mouse.x;
-  target.y = (gameObjects.player.position.y / 100) - mouse.y;
-
-  // var hipotenuse = Math.sqrt(Math.pow(target.y, 2) + Math.pow(target.x, 2));
-
-  // var oa = (target.y)/(target.x)
-  // var oh = target.y / hipotenuse;
-  // var ah = target.x / hipotenuse;
-
-  var rotationPlayer = atan(-target.y, -target.x) + Math.PI / 2;
-  // var rotationPlayer = Math.asin(oh) + Math.PI;
-  // var rotationPlayer = Math.acos(ah);
-
-  // Get angle
-  gameObjects.player.rotation.y = rotationPlayer;
 }
 
-// function for calculating atan
-function atan(y,x){
-  if (x>0){
-      v = Math.atan(y/x);
-  }
-  if (y>=0 && x<0){
-      v = Math.PI+Math.atan(y/x);
-  }
-  if (y<0 & x<0){
-      v = -Math.PI+Math.atan(y/x);
-  }
-  if (y>0 & x==0){
-      v = Math.PI/2;
-  }
-  if (y<0 && x==0){
-      v = -Math.PI/2;
-  }
-  if (v<0){
-      v=v+2*Math.PI;
-  }
-  return v
+
+function checkBulletHit(obj) {
+  // Check if enemy got hit
+  gameObjects.bullet.bullets.forEach((b, i) => {
+    b.collider = new THREE.Box3().setFromObject(b);
+    if (obj.collider.intersectsBox(b.collider)) {
+      if (!obj.dead) {
+        enemyKilled(obj, b, i);
+      }
+    }
+  });
 }
 
-// function to make new robots every n second
+// function to kill enemy remove and add points
+function enemyKilled(obj, b, i) {
+  obj.dead = true;
+  updateScore(obj.type == "enemy1" ? 2 : 5)
+  // remove bullet
+  scene.remove(b);
+  gameObjects.bullet.bullets.splice(i, 1);
+}
+
+//TODO
+function enemyFire(obj) {
+
+}
+
+// UPDATE Game state functions
+function updateScore(points){
+  gameSettings.score += points;
+  document.getElementById("score").innerHTML = 'Score: ' + gameSettings.score;
+}
+
+function updateLive() {
+  document.getElementById("live").innerHTML = `Live: ${gameSettings.live}`
+  if (gameSettings.live == 0) {
+    alert("You have lost")
+    gameSettings.gameOver = true;
+    resetGame();
+  }
+}
+
+function updateBullets(deltat) {
+  gameObjects.bullet.bullets.forEach((b, index) => {
+    b.position.z -= Math.cos(b.angle) * deltat * gameObjects.bullet.velocity;
+    b.position.x -= Math.sin(b.angle) * deltat * gameObjects.bullet.velocity;
+
+    if (b.position.z <= gameObjects.bullet.end) {
+      scene.remove(b);
+      gameObjects.bullet.bullets.splice(index, 1);
+    }
+  })
+}
+
+function updateStars() {
+  starGeo.vertices.forEach(p => {
+    p.velocity += p.acceleration;
+    p.z += p.velocity;
+    if (p.z > 200) {
+      p.z = -200;
+      p.velocity = 0;
+    }
+  });
+  starGeo.verticesNeedUpdate = true;
+  stars.rotation.z -= 0.002;
+}
+
+// function to make new objects every n second
 function makeObjects() {
   gameObjects.enemyMaker = window.setInterval(function () {
     if (!gameSettings.gameOver) {
       // we dice a random number if its 0 we add to scene
       if (!Math.floor(Math.random() * 4)) cloneObj(gameObjects.enemy1)
+      if (!Math.floor(Math.random() * 6)) cloneObj(gameObjects.enemy2)
       if (!Math.floor(Math.random() * 10)) cloneObj(gameObjects.powerUp)
+      if (!Math.floor(Math.random() * 1)) cloneObj(gameObjects.ring)
     }
   }, 5000 / gameSettings.difficulty);
 }
 
 // function to clone object 
-function cloneObj(obj){
+function cloneObj(obj) {
   var clone = obj.clone();
   // we set randomly in x by its right and left max, and in the z start line
   clone.position.set(Math.floor(Math.random() * (gameObjects.right - gameObjects.left + 1)) + gameObjects.left, -5, gameObjects.start);
@@ -295,12 +363,50 @@ function cloneObj(obj){
   gameObjects.objects.push(clone);
 }
 
+// functions for moving player
+function onMouseMove(event) {
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+}
+
+function onMouseClick(event) {
+
+  if (!gameSettings.gameOver) {
+    event.preventDefault()
+    shoot();
+  }
+}
+
+// function for calculating atan
+function atan(y, x) {
+  if (x > 0) {
+    v = Math.atan(y / x);
+  }
+  if (y >= 0 && x < 0) {
+    v = Math.PI + Math.atan(y / x);
+  }
+  if (y < 0 & x < 0) {
+    v = -Math.PI + Math.atan(y / x);
+  }
+  if (y > 0 & x == 0) {
+    v = Math.PI / 2;
+  }
+  if (y < 0 && x == 0) {
+    v = -Math.PI / 2;
+  }
+  if (v < 0) {
+    v = v + 2 * Math.PI;
+  }
+  return v
+}
+
+
 // function to player shoot a bullet
 function shoot() {
 
   if (!gameSettings.gameOver) {
     var clone = cloneFbx(gameObjects.bullet.object);
-    clone.position.set(gameObjects.player.position.x,gameObjects.player.position.y, gameObjects.player.position.z);
+    clone.position.set(gameObjects.player.position.x, gameObjects.player.position.y, gameObjects.player.position.z);
     clone.angle = gameObjects.player.rotation.y + Math.PI;
     scene.add(clone);
     clone.id = gameObjects.bullet.id++;
@@ -308,26 +414,21 @@ function shoot() {
   }
 }
 
-// function to change game difficulty
-function setDifficulty() {
-  gameSettings.difficulty = document.getElementById("difficulty").value;
-}
-
 function onDocumentKeyDown(event) {
   var keyCode = event.which;
 
   // BOTON IZQUIERDA
-  if (keyCode == 37 &&  gameObjects.player.position.x > -100) {
-      gameObjects.player.position.x -= 3;
-      // player.object.rotation.z = -Math.PI / 5;
-      // playerAnimator[2].start();
+  if (keyCode == 37 && gameObjects.player.position.x > -100) {
+    gameObjects.player.position.x -= 3;
+    // player.object.rotation.z = -Math.PI / 5;
+    // playerAnimator[2].start();
   }
 
   // BOTON DERECHA
-  else if (keyCode == 39 &&  gameObjects.player.position.x < 100) {
-      gameObjects.player.position.x += 3;
-      // player.object.rotation.z = Math.PI / 5;
-      // playerAnimator[3].start();
+  else if (keyCode == 39 && gameObjects.player.position.x < 100) {
+    gameObjects.player.position.x += 3;
+    // player.object.rotation.z = Math.PI / 5;
+    // playerAnimator[3].start();
 
   }
 }
@@ -343,6 +444,12 @@ function onWindowResize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
+// function to change game difficulty
+function setDifficulty() {
+  gameSettings.difficulty = document.getElementById("difficulty").value;
+}
+
+// functon to start game
 function run() {
   requestAnimationFrame(function () {
     run();
@@ -357,7 +464,7 @@ function run() {
   }
 }
 
-
+// functions for scene creation
 function setLightColor(light, r, g, b) {
   r /= 255;
   g /= 255;
@@ -434,7 +541,7 @@ function createScene(canvas) {
   window.addEventListener('mousemove', onMouseMove);
   window.addEventListener("click", onMouseClick);
   document.addEventListener("keydown", onDocumentKeyDown, false);
-  
+
   // document.addEventListener("keyup", onDocumentKeyUp, false);
 
   // get high score
@@ -446,7 +553,7 @@ function createScene(canvas) {
 
   // Stars
   starGeo = new THREE.Geometry();
-  for(let i = 0; i < 6000; i++){
+  for (let i = 0; i < 6000; i++) {
     star = new THREE.Vector3(
       Math.random() * 600 - 300,
       Math.random() * 600 - 300,
@@ -470,9 +577,11 @@ function createScene(canvas) {
   let promises = []
   promises.push(loadMTL('models/Arwing.mtl', 'models/Arwing.obj', 6))
   promises.push(loadMTL('models/Catspaw/Catspaw.mtl', 'models/Catspaw/Catspaw.obj', 5))
-  promises.push(loadMTL('models/PowerUp/PowerUp.mtl', 'models/PowerUp/PowerUp.obj', 5))
+  promises.push(loadMTL('models/Cornerian/Cornerian.mtl', 'models/Cornerian/Cornerian.obj', 3))
+  promises.push(loadMTL('models/PowerUp/PowerUp.mtl', 'models/PowerUp/PowerUp.obj', 3))
+  promises.push(loadMTL('models/Rings/Gold/Gold.mtl', 'models/Rings/Gold/Gold.obj', 3))
   promises.push(loadBullet());
-  Promise.all(promises).then((objects ) => {
+  Promise.all(promises).then((objects) => {
 
     gameObjects.player = objects[0];
     gameObjects.player.rotation.y = Math.PI
@@ -483,28 +592,15 @@ function createScene(canvas) {
     gameObjects.enemy1 = objects[1];
     gameObjects.enemy1.type = "enemy1";
 
-    gameObjects.powerUp = objects[2];
+    gameObjects.enemy2 = objects[2];
+    gameObjects.enemy2.type = "enemy2";
+
+    gameObjects.powerUp = objects[3];
     gameObjects.powerUp.type = "powerUp";
+
+    gameObjects.ring = objects[4];
+    gameObjects.ring.type = "ring";
     scene.add(gameObjects.player)
     run();
   })
-}
-
-function onMouseMove(event) {
-
-  mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-  mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-
-}
-
-function onMouseClick(event) {
-
-  if(!gameSettings.gameOver){
-    event.preventDefault()
-    shoot();
-  }
-}
-
-function loadObjects() {
-
 }

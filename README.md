@@ -37,8 +37,7 @@ Se ocuparan colliders para detectar los disparos, destruir los objetos y enemigo
 
 ### Avances 2
 - powerups
-- arreglar rotación
-- obstaculos
+- obstaculos, agregar asteriodes
 - 3 tipos de enemigos, avanzar hacia recto pero tiene 3 balas de vida, otro se mueve hacia el jugador, otro evade
 - amentando la dificultad con el tiempo
 - 100 de vida
