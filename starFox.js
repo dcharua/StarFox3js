@@ -50,12 +50,13 @@ var gameObjects = {
 var id = 0;
 
 // Loaders
-var mtlLoader = new THREE.MTLLoader();
-var objLoader = new THREE.OBJLoader();
+
 
 var currentTime = Date.now();
 
 function loadMTL(mtl, objPath, scale) {
+  var mtlLoader = new THREE.MTLLoader();
+  var objLoader = new THREE.OBJLoader();
   return new Promise((resolve) => {
     mtlLoader.load(mtl, (materials) => {
     materials.preload();
