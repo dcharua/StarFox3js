@@ -16,12 +16,8 @@ var gameSettings = {
   highScore: 0,
   gameOver: false,
   difficulty: 5,
-  lives: 3,
+  live: 100,
   gameClock: null
-}
-
-player = {
-  object: null
 }
 
 var target = new THREE.Vector3();
@@ -32,23 +28,26 @@ var windowHalfX = window.innerWidth / 2;
 var windowHalfY = window.innerHeight / 2;
 
 // Robot settings object
-var enemy = {
-  object: null,
-  enemies: [],
+var gameObjects = {
+  player: null,
+  rings: null,
+  powerUp: null,
+  enemy1: null,
+  objects: [],
   left: -150,
   right: 150,
   start: -200,
   end: -20,
-  enemyMaker: null
+  enemyMaker: null,
+  bullet : {
+    object: null,
+    id: 0,
+    bullets: [],
+    end: -200,
+    velocity: 0.12
+  }  
 }
-
-var bullet = {
-  object: null,
-  id: 0,
-  bullets: [],
-  end: -200,
-  velocity: 0.12
-}
+var id = 0;
 
 // Loaders
 var mtlLoader = new THREE.MTLLoader();
@@ -56,67 +55,12 @@ var objLoader = new THREE.OBJLoader();
 
 var currentTime = Date.now();
 
-function loadPlayer() {
-  mtlLoader.load("models/Arwing.mtl", function (materials) {
+function loadMTL(mtl, objPath, scale) {
+  return new Promise((resolve) => {
+    mtlLoader.load(mtl, (materials) => {
     materials.preload();
     objLoader.setMaterials(materials);
-    objLoader.load("models/Arwing.obj".replace('.mtl', '.obj'), function (object) {
-      
-      object.rotation.y = Math.PI
-      object.scale.set(6, 6, 6);
-      object.position.y = -10
-      object.position.z = 50
-      object.traverse(function (child) {
-        if (child.isMesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
-        }
-      });
-      player.object = object
-      scene.add(player.object);
-       console.log(player.object)
-    }, loadEnemy, null);
-  });
-}
-
-function loadEnemy() {
-  mtlLoader.load("models/Catspaw/Catspaw.mtl", function (materials) {
-    materials.preload();
-    objLoader.setMaterials(materials);
-    objLoader.load("models/Catspaw/Catspaw.obj", function (object) {
-      object.scale.set(6, 6, 6);
-      object.traverse(function (child) {
-        if (child.isMesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
-        }
-      });
-      enemy.object = object
-    }, loadBullet, null);
-  });
-}
-
-function loadBullet() {
-  var loader = new THREE.FBXLoader();
-  loader.load('models/Bullet.fbx', function(object) {
-    object.scale.set(2, 2, 2);
-    object.rotation.x = -Math.PI / 2;
-    object.traverse(function(child) {
-      if (child.isMesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
-      }
-    });
-    bullet.object = object;
-  });
-}
-
-
-function loadMTL(obj, mtl, objPath, scale) {
-  mtlLoader.load(mtl, function (materials) {
-    materials.preload();
-    objLoader.setMaterials(materials);
-    objLoader.load(objPath, function (object) {
+     objLoader.load(objPath, (object) => {
       object.scale.set(scale, scale, scale);
       object.traverse(function (child) {
         if (child.isMesh) {
@@ -124,12 +68,27 @@ function loadMTL(obj, mtl, objPath, scale) {
           child.receiveShadow = true;
         }
       });
-      obj.object = object
-      scene.add(obj.object);
-    }, null, null);
-  });
+      resolve(object)
+    }, null, );
+  })});
 }
 
+function loadBullet() {
+  return new Promise(resolve => {
+    var loader = new THREE.FBXLoader();
+    loader.load('models/Bullet.fbx', function(object) {
+      object.scale.set(2, 2, 2);
+      object.rotation.x = -Math.PI / 2;
+      object.traverse(function(child) {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
+      gameObjects.bullet.object = object;
+      resolve("done")
+  })});
+}
 
 // funtion to for gametime
 function clock() {
@@ -156,33 +115,30 @@ function resetGame() {
   }
 
   gameSettings.score = 0;
-  gameSettings.lives = 3;
+  gameSettings.live = 100;
   gameSettings.time = 0;
   document.getElementById("play").value = "Play";
 
   // clear interval for gameclock and roboto maker
   window.clearInterval(gameSettings.gameClock);
-  window.clearInterval(enemy.enemyMaker);
+  window.clearInterval(gameObjects.enemyMaker);
 }
 
 // funtion to start the game
 function startGame() {
   resetGame();
   // remove robots from scene if any
-  enemy.enemies.forEach(enemy => scene.remove(enemy));
-  enemy.enemies = [];
+  gameObjects.objects.forEach(enemy => scene.remove(enemy));
+  gameObjects.objects = [];
   // reset score time and lives in html
   document.getElementById("score").innerText = `Score: ${gameSettings.score.toString()}`;
   document.getElementById("time").innerText = `Time: ${gameSettings.playTime} seconds`;
-  document.getElementById("lives").innerHTML = 'Lives: ';
-  Array.from({
-    length: gameSettings.lives
-  }, () => document.getElementById("lives").innerHTML += ' &#9829;');
+  document.getElementById("live").innerHTML = `Live: ${gameSettings.live}`;
   document.getElementById("play").innerText = "Restart";
   // start game - clock and robot making
   gameSettings.gameOver = false;
   clock();
-  makeEnemies();
+  makeObjects();
 }
 
 // animation function to move robots foward
@@ -194,15 +150,15 @@ function animate() {
     currentTime = now;
 
     // Collider to player
-    playerCollider = new THREE.Box3().setFromObject(player.object);
+    playerCollider = new THREE.Box3().setFromObject(gameObjects.player);
 
     // for each robot in the array
-    enemy.enemies.forEach((e, index) => {
+    gameObjects.objects.forEach((e, index) => {
       // Collider to enemy
       e.collider = new THREE.Box3().setFromObject(e);
 
       // Check if enemy got hit
-      bullet.bullets.forEach((b, i) => {
+      gameObjects.bullet.bullets.forEach((b, i) => {
         b.collider = new THREE.Box3().setFromObject(b);
 
         if (e.collider.intersectsBox(b.collider)) {
@@ -213,7 +169,7 @@ function animate() {
 
             // remove bullet
             scene.remove(b);
-            bullet.bullets.splice(i, 1);
+            gameObjects.bullet.bullets.splice(i, 1);
           }
         }
       });
@@ -233,18 +189,15 @@ function animate() {
       // enemy gets to the end line
       if (e.position.y <= -50 || e.position.z >= 100) {
         scene.remove(e);
-        enemy.enemies.splice(index, 1);
+        gameObjects.objects.splice(index, 1);
       }
 
       if (playerCollider.intersectsBox(e.collider)) {
         if(!e.dead){
           e.dead = true;
-          gameSettings.lives -= 1;
-          document.getElementById("lives").innerHTML = 'Lives: ';
-          Array.from({
-            length: gameSettings.lives
-          }, () => document.getElementById("lives").innerHTML += ' &#9829;');
-          if (gameSettings.lives == 0) {
+          gameSettings.live -= 1;
+          document.getElementById("live").innerHTML = `Live: ${gameSettings.live}`
+          if (gameSettings.live == 0) {
             alert("You have lost")
             gameSettings.gameOver = true;
             resetGame();
@@ -255,13 +208,13 @@ function animate() {
     })
 
     // animate bullets
-    bullet.bullets.forEach((b, index) => {
-      b.position.z -= Math.cos(b.angle) * deltat * bullet.velocity;
-      b.position.x -= Math.sin(b.angle) * deltat * bullet.velocity;
+    gameObjects.bullet.bullets.forEach((b, index) => {
+      b.position.z -= Math.cos(b.angle) * deltat * gameObjects.bullet.velocity;
+      b.position.x -= Math.sin(b.angle) * deltat * gameObjects.bullet.velocity;
 
-      if (b.position.z <= bullet.end) {
+      if (b.position.z <= gameObjects.bullet.end) {
         scene.remove(b);
-        bullet.bullets.splice(index, 1);
+        gameObjects.bullet.bullets.splice(index, 1);
       }
     })
 
@@ -279,8 +232,8 @@ function animate() {
   }
 
   // Playr look at mouse
-  target.x = (player.object.position.x / 100) - mouse.x;
-  target.y = (player.object.position.y / 100) - mouse.y;
+  target.x = (gameObjects.player.position.x / 100) - mouse.x;
+  target.y = (gameObjects.player.position.y / 100) - mouse.y;
 
   // var hipotenuse = Math.sqrt(Math.pow(target.y, 2) + Math.pow(target.x, 2));
 
@@ -293,7 +246,7 @@ function animate() {
   // var rotationPlayer = Math.acos(ah);
 
   // Get angle
-  player.object.rotation.y = rotationPlayer;
+  gameObjects.player.rotation.y = rotationPlayer;
 }
 
 // function for calculating atan
@@ -320,31 +273,38 @@ function atan(y,x){
 }
 
 // function to make new robots every n second
-function makeEnemies() {
-  var id = 0;
-  enemy.enemyMaker = window.setInterval(function () {
+function makeObjects() {
+  gameObjects.enemyMaker = window.setInterval(function () {
     if (!gameSettings.gameOver) {
-      var clone = enemy.object.clone();
-      // we set randomly in x by its right and left max, and in the z start line
-      clone.position.set(Math.floor(Math.random() * (enemy.right - enemy.left + 1)) + enemy.left, -5, enemy.start);
-      scene.add(clone);
-      clone.id = id++;
-      enemy.enemies.push(clone);
+      // we dice a random number if its 0 we add to scene
+      if (!Math.floor(Math.random() * 3)) cloneObj(gameObjects.enemy1)
+      if (!Math.floor(Math.random() * 10)) cloneObj(gameObjects.powerUp)
     }
   }, 5000 / gameSettings.difficulty);
+}
+
+// function to clone object 
+function cloneObj(obj){
+  console.log(obj)
+  var clone = obj.clone();
+  // we set randomly in x by its right and left max, and in the z start line
+  clone.position.set(Math.floor(Math.random() * (gameObjects.right - gameObjects.left + 1)) + gameObjects.left, -5, gameObjects.start);
+  scene.add(clone);
+  clone.id = id++;
+  clone.type = obj.type
+  gameObjects.objects.push(clone);
 }
 
 // function to player shoot a bullet
 function shoot() {
 
   if (!gameSettings.gameOver) {
-    var clone = cloneFbx(bullet.object);
-    clone.position.set(player.object.position.x, player.object.position.y, player.object.position.z);
-    clone.angle = player.object.rotation.y + Math.PI;
+    var clone = cloneFbx(gameObjects.bullet.object);
+    clone.position.set(gameObjects.player.position.x,gameObjects.player.position.y, gameObjects.player.position.z);
+    clone.angle = gameObjects.player.rotation.y + Math.PI;
     scene.add(clone);
-    clone.id = bullet.id++;
-    bullet.bullets.push(clone);
-
+    clone.id = gameObjects.bullet.id++;
+    gameObjects.bullet.bullets.push(clone);
   }
 }
 
@@ -462,8 +422,6 @@ function createScene(canvas) {
   ambientLight = new THREE.AmbientLight(0x888888);
   root.add(ambientLight);
 
-  // Create the objects
-  loadPlayer();
   // loadEnemy();
   // Create a group to hold the objects
   group = new THREE.Object3D;
@@ -507,6 +465,29 @@ function createScene(canvas) {
 
   stars = new THREE.Points(starGeo, starMaterial);
   scene.add(stars);
+
+  // load Objects
+  let promises = []
+  promises.push(loadMTL('models/Arwing.mtl', 'models/Arwing.obj', 6))
+  promises.push(loadMTL('models/Catspaw/Catspaw.mtl', 'models/Catspaw/Catspaw.obj', 5))
+  promises.push(loadMTL('models/PowerUp/PowerUp.mtl', 'models/PowerUp/PowerUp.obj', 5))
+  promises.push(loadBullet());
+  Promise.all(promises).then((objects ) => {
+
+    gameObjects.player = objects[0];
+    gameObjects.player.rotation.y = Math.PI
+    gameObjects.player.position.y = -10
+    gameObjects.player.position.z = 50
+    gameObjects.player.type = "player";
+
+    gameObjects.enemy1 = objects[1];
+    gameObjects.enemy1.type = "enemy1";
+
+    gameObjects.powerUp = objects[2];
+    gameObjects.powerUp.type = "powerUp";
+    scene.add(gameObjects.player)
+    run();
+  })
 }
 
 function onMouseMove(event) {
@@ -522,4 +503,8 @@ function onMouseClick(event) {
     event.preventDefault()
     shoot();
   }
+}
+
+function loadObjects() {
+
 }
