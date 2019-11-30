@@ -277,7 +277,7 @@ function makeObjects() {
   gameObjects.enemyMaker = window.setInterval(function () {
     if (!gameSettings.gameOver) {
       // we dice a random number if its 0 we add to scene
-      if (!Math.floor(Math.random() * 3)) cloneObj(gameObjects.enemy1)
+      if (!Math.floor(Math.random() * 4)) cloneObj(gameObjects.enemy1)
       if (!Math.floor(Math.random() * 10)) cloneObj(gameObjects.powerUp)
     }
   }, 5000 / gameSettings.difficulty);
@@ -285,7 +285,6 @@ function makeObjects() {
 
 // function to clone object 
 function cloneObj(obj){
-  console.log(obj)
   var clone = obj.clone();
   // we set randomly in x by its right and left max, and in the z start line
   clone.position.set(Math.floor(Math.random() * (gameObjects.right - gameObjects.left + 1)) + gameObjects.left, -5, gameObjects.start);
@@ -317,15 +316,15 @@ function onDocumentKeyDown(event) {
   var keyCode = event.which;
 
   // BOTON IZQUIERDA
-  if (keyCode == 37 && player.object.position.x > -100) {
-      player.object.position.x -= 3;
+  if (keyCode == 37 &&  gameObjects.player.position.x > -100) {
+      gameObjects.player.position.x -= 3;
       // player.object.rotation.z = -Math.PI / 5;
       // playerAnimator[2].start();
   }
 
   // BOTON DERECHA
-  else if (keyCode == 39 && player.object.position.x < 100) {
-      player.object.position.x += 3;
+  else if (keyCode == 39 &&  gameObjects.player.position.x < 100) {
+      gameObjects.player.position.x += 3;
       // player.object.rotation.z = Math.PI / 5;
       // playerAnimator[3].start();
 
