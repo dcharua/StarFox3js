@@ -234,11 +234,11 @@ function updateObject(deltat) {
         break;
       
       case 'ring':
-          // Collider to enemy
-          obj.position.z += deltat * 0.04;
-          checkRemove(obj, index);
-          checkCollition(obj);
-          break;
+        // Collider to enemy
+        obj.position.z += deltat * 0.04;
+        checkRemove(obj, index);
+        checkCollition(obj);
+        break;
     }
   })
 }
@@ -263,7 +263,7 @@ function checkCollition(obj) {
         case 'powerUp':
           gameSettings.live += 5;
           break;
-        case 'powerUp':
+        case 'ring':
           updateScore(10)
           break;
       }
