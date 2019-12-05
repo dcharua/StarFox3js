@@ -35,6 +35,13 @@ var gameObjects = {
   enemy1: null,
   enemy2: null,
   enemy3: null,
+  enemyBullet: {
+    object: null,
+    id: 0,
+    bullets: [],
+    end: 100,
+    velocity: 0.20
+  },
   objects: [],
   left: -150,
   right: 150,
@@ -96,6 +103,24 @@ function loadBullet() {
   }, null, error => reject(error));
 }
 
+function loadEnemyBullet() {
+  return new Promise((resolve, reject) => {
+    var loader = new THREE.FBXLoader();
+    loader.load('models/Bullet.fbx', object => {
+      object.scale.set(2, 2, 2);
+      object.rotation.x = -Math.PI / 2;
+      object.traverse(function (child) {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
+      gameObjects.enemyBullet.object = object;
+      resolve("done")
+    })
+  }, null, error => reject(error));
+}
+
 // funtion to for gametime
 function clock() {
   gameSettings.gameClock = window.setInterval(function () {
@@ -104,6 +129,7 @@ function clock() {
     if (gameSettings.time === gameSettings.playTime) {
       alert("Time is up")
       gameSettings.gameOver = true;
+
       resetGame();
       return;
     }
@@ -161,21 +187,15 @@ function animate() {
     updateObject(deltat);
     // animate bullets
     updateBullets(deltat);
+    // animate enemy bullets
+    updateEnemyBullets(deltat);
     // Stars
     updateStars();
     // Playerr look at mouse
     target.x = (gameObjects.player.position.x / 100) - mouse.x;
     target.y = (gameObjects.player.position.y / 100) - mouse.y;
 
-    // var hipotenuse = Math.sqrt(Math.pow(target.y, 2) + Math.pow(target.x, 2));
-
-    // var oa = (target.y)/(target.x)
-    // var oh = target.y / hipotenuse;
-    // var ah = target.x / hipotenuse;
-
     var rotationPlayer = atan(-target.y, -target.x) + Math.PI / 2;
-    // var rotationPlayer = Math.asin(oh) + Math.PI;
-    // var rotationPlayer = Math.acos(ah);
 
     // Get angle
     gameObjects.player.rotation.y = rotationPlayer;
@@ -234,10 +254,30 @@ function updateObject(deltat) {
 
           if (!obj.dead) {
             obj.position.z += deltat * obj.velocity;
-            // TODO: animate always zigzagging but always rotation towards player
+            // Animate always zigzagging 
+            if(obj.zigZagDirection == 1){
+              if (obj.position.x < (obj.startX + obj.zigZagMax)){
+                obj.zigZagDirection = 1
+              }else{
+                obj.zigZagDirection = -1
+              }
+            }else{
+              if (obj.position.x > (obj.startX - obj.zigZagMax)){
+                obj.zigZagDirection = -1
+              }else{
+                obj.zigZagDirection = 1
+              }
+            }
+
+            obj.position.x += (obj.zigZagDirection * (obj.zigZagVelocity * deltat) * obj.velocity);
+            
+            
+            // Watching towards player
             obj.lookAt(gameObjects.player.position)
-            // TODO: enemy fire bullet certain time interval
+
+            // Fire every second
             enemyFire(obj);
+
           } else {
             obj.position.y -= deltat * 0.06;
             obj.rotation.x += Math.random() * 0.02;
@@ -271,6 +311,10 @@ function checkRemove(obj, index) {
   if (obj.position.y <= -50 || obj.position.z >= 100) {
     scene.remove(obj);
     gameObjects.objects.splice(index, 1);
+
+    if (obj.type == "enemy3") {
+      // window.clearInterval(obj.fireInterval)
+    }
   }
 }
 
@@ -323,11 +367,23 @@ function checkBulletHit(obj) {
 function enemyKilled(obj, b, i) {
   obj.dead = true;
   updateScore(obj.type == "enemy1" ? 2 : obj.type == "enemy2" ? 5 : 10)
+
+  if (obj.type == "enemy3") {
+    // window.clearInterval(obj.fireInterval)
+  }
 }
 
-//TODO
+// Enemy fire bullet towards player
 function enemyFire(obj) {
-
+  if (!gameSettings.gameOver) {
+    var clone = cloneFbx(gameObjects.enemyBullet.object);
+    clone.position.set(obj.position.x, obj.position.y, obj.position.z);
+    clone.angle = obj.rotation.y;
+    console.log(clone.angle);
+    scene.add(clone);
+    clone.id = gameObjects.enemyBullet.id++;
+    gameObjects.enemyBullet.bullets.push(clone);
+  }
 }
 
 // UPDATE Game state functions
@@ -353,6 +409,18 @@ function updateBullets(deltat) {
     if (b.position.z <= gameObjects.bullet.end) {
       scene.remove(b);
       gameObjects.bullet.bullets.splice(index, 1);
+    }
+  })
+}
+
+function updateEnemyBullets(deltat) {
+  gameObjects.enemyBullet.bullets.forEach((b, index) => {
+    b.position.z += Math.cos(b.angle) * deltat * gameObjects.enemyBullet.velocity;
+    b.position.x += Math.sin(b.angle) * deltat * gameObjects.enemyBullet.velocity;
+
+    if (b.position.z >= gameObjects.enemyBullet.end) {
+      scene.remove(b);
+      gameObjects.enemyBullet.bullets.splice(index, 1);
     }
   })
 }
@@ -388,10 +456,19 @@ function makeObjects() {
 function cloneObj(obj) {
   var clone = obj.clone();
   // we set randomly in x by its right and left max, and in the z start line
-  clone.position.set(Math.floor(Math.random() * (gameObjects.right - gameObjects.left + 1)) + gameObjects.left, -5, gameObjects.start);
+  clone.startX = Math.floor(Math.random() * (gameObjects.right - gameObjects.left + 1)) + gameObjects.left
+  clone.position.set(clone.startX, -5, gameObjects.start);
   scene.add(clone);
   clone.id = id++;
   clone.type = obj.type
+  if(clone.type == 'enemy3'){
+    clone.zigZagVelocity = obj.zigZagVelocity
+    clone.zigZagDirection = obj.zigZagDirection
+    clone.zigZagMax = Math.random() * 10 + 15;
+
+    // Enemy fire bullet certain time interval
+    // clone.fireInterval = setInterval(() => { enemyFire(obj) }, 500);
+  }
   clone.lives = obj.lives
   clone.velocity = obj.velocity
   gameObjects.objects.push(clone);
@@ -621,6 +698,7 @@ function createScene(canvas) {
   promises.push(loadMTL('models/PowerUp/PowerUp.mtl', 'models/PowerUp/PowerUp.obj', 3))
   promises.push(loadMTL('models/Rings/Gold/Gold.mtl', 'models/Rings/Gold/Gold.obj', 3))
   promises.push(loadBullet());
+  promises.push(loadEnemyBullet());
   Promise.all(promises).then((objects) => {
 
     gameObjects.player = objects[0];
@@ -642,6 +720,8 @@ function createScene(canvas) {
     gameObjects.enemy3 = objects[3];
     gameObjects.enemy3.type = "enemy3";
     gameObjects.enemy3.lives = 1;
+    gameObjects.enemy3.zigZagVelocity = 1.5;
+    gameObjects.enemy3.zigZagDirection = 1;
     gameObjects.enemy3.velocity = 0.06;
 
     gameObjects.powerUp = objects[4];
