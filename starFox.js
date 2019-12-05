@@ -11,13 +11,11 @@ var renderer = null,
 // VARIABLES FOR THE GAME TIME
 var gameSettings = {
   playTime: 60,
-  time: 0,
   score: 0,
   highScore: 0,
   gameOver: false,
   difficulty: 5,
   live: 100,
-  gameClock: null
 }
 
 var target = new THREE.Vector3();
@@ -121,23 +119,10 @@ function loadEnemyBullet() {
   }, null, error => reject(error));
 }
 
-// funtion to for gametime
-function clock() {
-  gameSettings.gameClock = window.setInterval(function () {
-    document.getElementById("time").innerHTML = `Time:  ${(gameSettings.playTime - gameSettings.time).toString()} seconds`;
-    gameSettings.time++;
-    if (gameSettings.time === gameSettings.playTime) {
-      alert("Time is up")
-      gameSettings.gameOver = true;
-
-      resetGame();
-      return;
-    }
-  }, 1000);
-}
-
 
 function resetGame() {
+  $("#container").hide();
+  $(".cover").fadeIn();
   //save high score
   if (gameSettings.score > gameSettings.highScore) {
     gameSettings.highScore = gameSettings.score;
@@ -148,28 +133,22 @@ function resetGame() {
 
   gameSettings.score = 0;
   gameSettings.live = 100;
-  gameSettings.time = 0;
-  document.getElementById("play").value = "Play";
-
   // clear interval for gameclock and roboto maker
-  window.clearInterval(gameSettings.gameClock);
   window.clearInterval(gameObjects.enemyMaker);
 }
 
 // funtion to start the game
 function startGame() {
-  resetGame();
+  $("#container").show();
+  $(".cover").hide();
   // remove objects from scene if any
   gameObjects.objects.forEach(enemy => scene.remove(enemy));
   gameObjects.objects = [];
   // reset score time and lives in html
   document.getElementById("score").innerText = `Score: ${gameSettings.score.toString()}`;
-  document.getElementById("time").innerText = `Time: ${gameSettings.playTime} seconds`;
   document.getElementById("live").innerHTML = `Live: ${gameSettings.live}`;
-  document.getElementById("play").innerText = "Restart";
   // start game - 
   gameSettings.gameOver = false;
-  clock();
   makeObjects();
 }
 
@@ -275,8 +254,8 @@ function updateObject(deltat) {
             // Watching towards player
             obj.lookAt(gameObjects.player.position)
 
-            // Fire every second
-            enemyFire(obj);
+            // Fire if number is 0 out of 20
+            if (!Math.floor(Math.random() * 20)) enemyFire(obj);
 
           } else {
             obj.position.y -= deltat * 0.06;
@@ -732,4 +711,12 @@ function createScene(canvas) {
     scene.add(gameObjects.player)
     run();
   })
+}
+
+
+function removeSplash(milisec){
+  window.setTimeout(() => {
+    $('.splash').fadeOut();
+    $('.menu').fadeIn();
+  }, milisec)
 }

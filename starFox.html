@@ -33,9 +33,10 @@
     function() {
       var canvas = document.getElementById("webglcanvas");
 
+      //remove Splash after n miliseconds
+      removeSplash(3000);
       // create the scene
       createScene(canvas);
-
       // initialize the controls
       initControls();
 
@@ -46,18 +47,25 @@
   </head>
 
   <body>
+
+    <div class="cover">
+      <div class="splash"><img src="/images/menu.jpeg" alt=""></div>
+      <div class="menu">
+        <div id="high_score">High Score: 0 </div>
+        <!-- <div>
+            <label for="difficulty">Difficulty 1-10 </label>
+            <input id="difficulty" name="difficulty" onchange="setDifficulty()" type="number" max="10" min="1" step="1" value="5">
+          </div> -->
+        <ul class="menu-container">
+          <li class="menu-item" onclick="startGame()">Play</li>
+        </ul>
+      </div>
+    </div>
     <div id="container">
       <canvas id="webglcanvas"></canvas>
       <div class="game-controls">
-        <div id="time">Time: 60 seconds</div>
-        <div id="live">Lives:         &#9829;         &#9829;         &#9829;</div>
+        <div id="live">Live:         &#9829;         &#9829;         &#9829;</div>
         <div id="score">Score: 0 </div>
-        <div id="high_score">High Score: 0 </div>
-        <div>
-          <label for="difficulty">Difficulty 1-10 </label>
-          <input id="difficulty" name="difficulty" onchange="setDifficulty()" type="number" max="10" min="1" step="1" value="5">
-        </div>
-        <button id="play">Play</button>
       </div>
     </div>
   </body>

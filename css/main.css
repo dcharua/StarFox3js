@@ -14,8 +14,50 @@ body {
 #container {
   position: absolute;
   color: white;
+  display: none;
 }
 
+.cover {
+  position: absolute;
+  top: 0;
+}
+
+.menu {
+  display: none;
+  background: #000;
+  height: 100vh;
+  width: 100vw;
+}
+
+.menu-container {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menu-item{
+  padding: 10px 100px;
+  margin: 10px;
+  background-color: #EBD5D6;
+  color:#210E63;
+  text-transform: uppercase;
+  font-size: 32px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  font-weight: 800;
+  list-style: none;
+}
+
+
+.splash{
+  background: #000;
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .game-controls{
   position: absolute;
   top: 20px;
@@ -23,19 +65,16 @@ body {
   font-size: 16px;
 }
 
-
-
-#play {
-  margin-top: 20px;
-  background-color: #008CBA;
-  border: none;
-  color: white;
-  padding: 15px 32px;
-  text-align: center;
-  text-decoration: none;
-  display: inline-block;
-  font-size: 16px;
+#high_score{
+  position: absolute;
+  right: 20px;
+  top: 20px;
+  color: #FFF;
+  text-transform: uppercase;
+  font-size: 32px;
+  letter-spacing: 2px;
 }
+
 
 #webglcanvas {
   border: none;
