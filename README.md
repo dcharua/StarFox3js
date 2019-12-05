@@ -36,10 +36,40 @@ Se ocuparan colliders para detectar los disparos, destruir los objetos y enemigo
 [link](https://www.models-resource.com/nintendo_64/starfox64/)
 
 ### Avances 2
-- powerups
+- Agragr música de fondo
+- Agregar efectos musicales en:
+  - Disparo
+  - Bullet hit enemy
+  - Choque de enemigo con jugador
+- 3 tipos de powerups:
+  1. Liefe 
+      - ~~Te da 10 puntos de vida~~
+      - Agregar efectos cuando se active
+  2. Weapon
+      - Te da laser infinito por 5 segundos
+      - Agregar efectos cuando se active
+  3. Ring 
+      - ~~Te da 10 puntos de score~~
+      - Agregar efectos cuando se active
 - obstaculos, agregar asteriodes
-- 3 tipos de enemigos, avanzar hacia recto pero tiene 3 balas de vida, otro se mueve hacia el jugador, otro evade
+- 3 tipos de enemigos: 
+  1. Enemigo fácil
+      - ~~Va recto~~
+      - ~~Vida: 2 balas~~
+      - ~~Daño choque a jugador: 20 puntos~~
+      - ~~Score: le da 2 puntos~~
+  2. Enemigo medio
+      - ~~Se mueve hacia el jugador~~
+      - ~~Vida: 1 bala~~
+      - ~~Daño choque a jugador: 20 puntos~~
+      - ~~Score: le da 5 puntos~~
+  3. Enemigo difícil
+      - Evade y te dispara
+      - ~~Vida: 1 bala~~
+      - ~~Daño choque a jugador: 20 puntos~~
+      - Daño bala: 10 puntos
+      - ~~Score: le da 10 puntos~~
 - amentando la dificultad con el tiempo
-- 100 de vida
+- ~~100 de vida~~
 - interfaz con menu 
 - animacion de explosion 

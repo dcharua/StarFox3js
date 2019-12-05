@@ -34,6 +34,7 @@ var gameObjects = {
   powerUp: null,
   enemy1: null,
   enemy2: null,
+  enemy3: null,
   objects: [],
   left: -150,
   right: 150,
@@ -45,7 +46,7 @@ var gameObjects = {
     id: 0,
     bullets: [],
     end: -200,
-    velocity: 0.12
+    velocity: 0.20
   }
 }
 var id = 0;
@@ -191,12 +192,11 @@ function updateObject(deltat) {
         checkBulletHit(obj);
         // update the z position forward if not dead
         if (!obj.dead) {
-          obj.position.z += deltat * 0.05;
+          obj.position.z += deltat * obj.velocity;
           obj.rotation.x += Math.random() * 0.01 - 0.005;
           obj.rotation.y += Math.random() * 0.01 - 0.005;
           obj.rotation.z += Math.random() * 0.01 - 0.005;
-          // TODO enemy fire bullet
-          enemyFire(obj);
+          
         } else {
           obj.position.y -= deltat * 0.05;
           obj.rotation.x += Math.random() * 0.02;
@@ -210,11 +210,14 @@ function updateObject(deltat) {
       case 'enemy2':
         // Check if enemy got hit
         checkBulletHit(obj)
-        // TODO animate different movement and dead
+        
         if (!obj.dead) {
-          obj.position.z += deltat * 0.06;
-          // TODO enemy fire bullet
-          enemyFire(obj);
+
+          // Animate always moving towards player
+          obj.lookAt(gameObjects.player.position)
+          
+          obj.position.z += Math.cos(obj.rotation.y) * deltat * obj.velocity;
+          obj.position.x += Math.sin(obj.rotation.y) * deltat * obj.velocity;
         } else {
           obj.position.y -= deltat * 0.06;
           obj.rotation.x += Math.random() * 0.02;
@@ -224,6 +227,26 @@ function updateObject(deltat) {
         checkRemove(obj, index);
         checkCollition(obj);
         break;
+
+        case 'enemy3':
+          // Check if enemy got hit
+          checkBulletHit(obj)
+
+          if (!obj.dead) {
+            obj.position.z += deltat * obj.velocity;
+            // TODO: animate always zigzagging but always rotation towards player
+            obj.lookAt(gameObjects.player.position)
+            // TODO: enemy fire bullet certain time interval
+            enemyFire(obj);
+          } else {
+            obj.position.y -= deltat * 0.06;
+            obj.rotation.x += Math.random() * 0.02;
+            obj.rotation.y += Math.random() * 0.02;
+            obj.rotation.z += Math.random() * 0.02;
+          }
+          checkRemove(obj, index);
+          checkCollition(obj);
+          break;
 
 
       case 'powerUp':
@@ -258,10 +281,12 @@ function checkCollition(obj) {
       obj.dead = true;
       switch (obj.type) {
         case 'enemy1':
-          gameSettings.live -= 5;
+        case 'enemy2':
+        case 'enemy3':
+          gameSettings.live -= 20;
           break;
         case 'powerUp':
-          gameSettings.live += 5;
+          gameSettings.live += 10;
           break;
         case 'ring':
           updateScore(10)
@@ -279,7 +304,16 @@ function checkBulletHit(obj) {
     b.collider = new THREE.Box3().setFromObject(b);
     if (obj.collider.intersectsBox(b.collider)) {
       if (!obj.dead) {
-        enemyKilled(obj, b, i);
+        if (obj.lives > 1){
+          // remove bullet
+          obj.lives--;
+        }else{
+          enemyKilled(obj, b, i);
+        }
+        // remove bullet
+        scene.remove(b);
+        gameObjects.bullet.bullets.splice(i, 1);
+        
       }
     }
   });
@@ -288,10 +322,7 @@ function checkBulletHit(obj) {
 // function to kill enemy remove and add points
 function enemyKilled(obj, b, i) {
   obj.dead = true;
-  updateScore(obj.type == "enemy1" ? 2 : 5)
-  // remove bullet
-  scene.remove(b);
-  gameObjects.bullet.bullets.splice(i, 1);
+  updateScore(obj.type == "enemy1" ? 2 : obj.type == "enemy2" ? 5 : 10)
 }
 
 //TODO
@@ -307,7 +338,7 @@ function updateScore(points){
 
 function updateLive() {
   document.getElementById("live").innerHTML = `Live: ${gameSettings.live}`
-  if (gameSettings.live == 0) {
+  if (gameSettings.live <= 0) {
     alert("You have lost")
     gameSettings.gameOver = true;
     resetGame();
@@ -346,8 +377,9 @@ function makeObjects() {
       // we dice a random number if its 0 we add to scene
       if (!Math.floor(Math.random() * 4)) cloneObj(gameObjects.enemy1)
       if (!Math.floor(Math.random() * 6)) cloneObj(gameObjects.enemy2)
+      if (!Math.floor(Math.random() * 12)) cloneObj(gameObjects.enemy3)
       if (!Math.floor(Math.random() * 10)) cloneObj(gameObjects.powerUp)
-      if (!Math.floor(Math.random() * 1)) cloneObj(gameObjects.ring)
+      if (!Math.floor(Math.random() * 6)) cloneObj(gameObjects.ring)
     }
   }, 5000 / gameSettings.difficulty);
 }
@@ -360,6 +392,8 @@ function cloneObj(obj) {
   scene.add(clone);
   clone.id = id++;
   clone.type = obj.type
+  clone.lives = obj.lives
+  clone.velocity = obj.velocity
   gameObjects.objects.push(clone);
 }
 
@@ -577,7 +611,13 @@ function createScene(canvas) {
   let promises = []
   promises.push(loadMTL('models/Arwing.mtl', 'models/Arwing.obj', 6))
   promises.push(loadMTL('models/Catspaw/Catspaw.mtl', 'models/Catspaw/Catspaw.obj', 5))
-  promises.push(loadMTL('models/Cornerian/Cornerian.mtl', 'models/Cornerian/Cornerian.obj', 3))
+  
+  // TODO: Load the actual enemies, now repeating the one that loads
+  
+  promises.push(loadMTL('models/Catspaw/Catspaw.mtl', 'models/Catspaw/Catspaw.obj', 5))
+  promises.push(loadMTL('models/Catspaw/Catspaw.mtl', 'models/Catspaw/Catspaw.obj', 5))
+  // promises.push(loadMTL('models/Cornerian/Cornerian.mtl', 'models/Cornerian/Cornerian.obj', 3))
+
   promises.push(loadMTL('models/PowerUp/PowerUp.mtl', 'models/PowerUp/PowerUp.obj', 3))
   promises.push(loadMTL('models/Rings/Gold/Gold.mtl', 'models/Rings/Gold/Gold.obj', 3))
   promises.push(loadBullet());
@@ -591,14 +631,23 @@ function createScene(canvas) {
 
     gameObjects.enemy1 = objects[1];
     gameObjects.enemy1.type = "enemy1";
+    gameObjects.enemy1.lives = 2;
+    gameObjects.enemy1.velocity = 0.04;
 
     gameObjects.enemy2 = objects[2];
     gameObjects.enemy2.type = "enemy2";
+    gameObjects.enemy2.lives = 1;
+    gameObjects.enemy2.velocity = 0.08;
 
-    gameObjects.powerUp = objects[3];
+    gameObjects.enemy3 = objects[3];
+    gameObjects.enemy3.type = "enemy3";
+    gameObjects.enemy3.lives = 1;
+    gameObjects.enemy3.velocity = 0.06;
+
+    gameObjects.powerUp = objects[4];
     gameObjects.powerUp.type = "powerUp";
 
-    gameObjects.ring = objects[4];
+    gameObjects.ring = objects[5];
     gameObjects.ring.type = "ring";
     scene.add(gameObjects.player)
     run();
