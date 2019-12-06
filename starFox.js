@@ -255,7 +255,8 @@ function updateObject(deltat) {
             obj.lookAt(gameObjects.player.position)
 
             // Fire if number is 0 out of 20
-            if (!Math.floor(Math.random() * 20)) enemyFire(obj);
+            // if (!Math.floor(Math.random() * 20)) enemyFire(obj);
+            if (Math.floor(obj.position.z) % 30 == 0) enemyFire(obj);
 
           } else {
             obj.position.y -= deltat * 0.06;
@@ -308,6 +309,15 @@ function checkCollition(obj) {
         case 'enemy3':
           gameSettings.live -= 20;
           break;
+        case 'enemyBullet':
+          gameSettings.live -= 2;
+          // remove bullet
+          var index = gameObjects.enemyBullet.bullets.indexOf(obj);
+          if (index > -1) {
+            gameObjects.enemyBullet.bullets.splice(index, 1);
+          }
+          scene.remove(obj);
+          break;
         case 'powerUp':
           gameSettings.live += 10;
           break;
@@ -358,7 +368,7 @@ function enemyFire(obj) {
     var clone = cloneFbx(gameObjects.enemyBullet.object);
     clone.position.set(obj.position.x, obj.position.y, obj.position.z);
     clone.angle = obj.rotation.y;
-    console.log(clone.angle);
+    clone.type = 'enemyBullet';
     scene.add(clone);
     clone.id = gameObjects.enemyBullet.id++;
     gameObjects.enemyBullet.bullets.push(clone);
@@ -394,6 +404,7 @@ function updateBullets(deltat) {
 
 function updateEnemyBullets(deltat) {
   gameObjects.enemyBullet.bullets.forEach((b, index) => {
+    b.collider = new THREE.Box3().setFromObject(b);
     b.position.z += Math.cos(b.angle) * deltat * gameObjects.enemyBullet.velocity;
     b.position.x += Math.sin(b.angle) * deltat * gameObjects.enemyBullet.velocity;
 
@@ -401,6 +412,8 @@ function updateEnemyBullets(deltat) {
       scene.remove(b);
       gameObjects.enemyBullet.bullets.splice(index, 1);
     }
+
+    checkCollition(b);
   })
 }
 

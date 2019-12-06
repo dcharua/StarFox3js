@@ -67,9 +67,9 @@ Se ocuparan colliders para detectar los disparos, destruir los objetos y enemigo
       - Evade y te dispara
       - ~~Vida: 1 bala~~
       - ~~Daño choque a jugador: 20 puntos~~
-      - Daño bala: 10 puntos
+      - ~~Daño bala: 2 puntos~~
       - ~~Score: le da 10 puntos~~
 - amentando la dificultad con el tiempo
 - ~~100 de vida~~
-- interfaz con menu 
+- ~~interfaz con menu~~
 - animacion de explosion 
