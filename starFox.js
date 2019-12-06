@@ -146,7 +146,8 @@ function startGame() {
   gameObjects.objects = [];
   // reset score time and lives in html
   document.getElementById("score").innerText = `Score: ${gameSettings.score.toString()}`;
-  document.getElementById("live").innerHTML = `Live: ${gameSettings.live}`;
+  // document.getElementById("live").innerHTML = `Live: ${gameSettings.live}`;
+  $('#live .percentage .alive').width(`${gameSettings.live}%`);
   // start game - 
   gameSettings.gameOver = false;
   makeObjects();
@@ -382,7 +383,8 @@ function updateScore(points){
 }
 
 function updateLive() {
-  document.getElementById("live").innerHTML = `Live: ${gameSettings.live}`
+  // document.getElementById("live").innerHTML = `Live: ${gameSettings.live}`
+  $('#live .percentage .alive').width(`${gameSettings.live}%`);
   if (gameSettings.live <= 0) {
     alert("You have lost")
     gameSettings.gameOver = true;

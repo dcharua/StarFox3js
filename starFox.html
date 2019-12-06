@@ -23,7 +23,20 @@
 
     <script src="starFox.js"></script>
 
-   
+  <style>
+    #live .percentage{
+      width: 200px;
+      margin-top: 4.5px;
+      /* background: rgba(246, 71, 71, 1); */
+      height: 16px;
+      display: inline-block;
+    }
+    #live .percentage .alive {
+      height: 100%;
+      background: rgba(38, 194, 129, 1);
+      display: block;
+    }
+  </style>
   <script type="text/javascript">
   function initControls() {
     $("#play").click(() => startGame());
@@ -64,7 +77,7 @@
     <div id="container">
       <canvas id="webglcanvas"></canvas>
       <div class="game-controls">
-        <div id="live">Live:         &#9829;         &#9829;         &#9829;</div>
+        <div id="live">Live: <span class="percentage"><span class="alive"></span></span></div>
         <div id="score">Score: 0 </div>
       </div>
     </div>
