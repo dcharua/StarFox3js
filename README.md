@@ -64,7 +64,7 @@ Se ocuparan colliders para detectar los disparos, destruir los objetos y enemigo
       - ~~Daño choque a jugador: 20 puntos~~
       - ~~Score: le da 5 puntos~~
   3. Enemigo difícil
-      - Evade y te dispara
+      - ~~Evade y te dispara~~
       - ~~Vida: 1 bala~~
       - ~~Daño choque a jugador: 20 puntos~~
       - ~~Daño bala: 2 puntos~~

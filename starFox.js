@@ -38,7 +38,7 @@ var gameObjects = {
     id: 0,
     bullets: [],
     end: 100,
-    velocity: 0.20
+    velocity: 0.10
   },
   objects: [],
   left: -150,
@@ -257,7 +257,7 @@ function updateObject(deltat) {
 
             // Fire if number is 0 out of 20
             // if (!Math.floor(Math.random() * 20)) enemyFire(obj);
-            if (Math.floor(obj.position.z) % 30 == 0) enemyFire(obj);
+            if (Math.floor(obj.position.z) % 40 == 0) enemyFire(obj);
 
           } else {
             obj.position.y -= deltat * 0.06;
@@ -274,7 +274,7 @@ function updateObject(deltat) {
         // Collider to enemy
         obj.position.z += deltat * 0.03;
         checkRemove(obj, index);
-        checkCollition(obj);
+        checkCollition(obj, index);
         break;
       
       case 'ring':
@@ -300,7 +300,7 @@ function checkRemove(obj, index) {
 }
 
 // function to check if player collition with object
-function checkCollition(obj) {
+function checkCollition(obj, index = 0) {
   if (playerCollider.intersectsBox(obj.collider)) {
     if (!obj.dead) {
       obj.dead = true;
@@ -321,9 +321,19 @@ function checkCollition(obj) {
           break;
         case 'powerUp':
           gameSettings.live += 10;
+
+          spotLight.color.setHex(0x458915);
+
+          setTimeout(function(){ spotLight.color.setHex(0xffffff); }, 200);
+
+          scene.remove(obj);
+          gameObjects.objects.splice(index, 1);
+
           break;
         case 'ring':
           updateScore(10)
+
+          obj.scale.set(6, 6, 6);
           break;
       }
       updateLive();
