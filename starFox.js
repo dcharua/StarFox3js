@@ -16,6 +16,7 @@ var gameSettings = {
   gameOver: false,
   difficulty: 5,
   live: 100,
+  backgroundMusic: null
 }
 
 var target = new THREE.Vector3();
@@ -119,6 +120,24 @@ function loadEnemyBullet() {
   }, null, error => reject(error));
 }
 
+function loadBackgroundMusic() {
+  var listener = new THREE.AudioListener();
+  camera.add( listener );
+
+  // create a global audio source
+  var sound = new THREE.Audio( listener );
+
+  // load a sound and set it as the Audio object's buffer
+  var audioLoader = new THREE.AudioLoader();
+  audioLoader.load( 'sounds/background.mp3', function( buffer ) {
+    sound.setBuffer( buffer );
+    sound.setLoop( true );
+    sound.setVolume( 0.5 );
+    sound.play();
+
+    gameSettings.backgroundMusic = sound
+  });
+}
 
 function resetGame() {
   $("#container").hide();
@@ -257,7 +276,7 @@ function updateObject(deltat) {
 
             // Fire if number is 0 out of 20
             // if (!Math.floor(Math.random() * 20)) enemyFire(obj);
-            if (Math.floor(obj.position.z) % 40 == 0) enemyFire(obj);
+            if (Math.floor(obj.position.z) % 50 == 0) enemyFire(obj);
 
           } else {
             obj.position.y -= deltat * 0.06;
@@ -333,7 +352,7 @@ function checkCollition(obj, index = 0) {
         case 'ring':
           updateScore(10)
 
-          obj.scale.set(6, 6, 6);
+          obj.scale.set(8, 8, 8);
           break;
       }
       updateLive();
@@ -687,6 +706,9 @@ function createScene(canvas) {
 
   stars = new THREE.Points(starGeo, starMaterial);
   scene.add(stars);
+
+  // load Background music
+  loadBackgroundMusic()
 
   // load Objects
   let promises = []

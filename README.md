@@ -44,13 +44,13 @@ Se ocuparan colliders para detectar los disparos, destruir los objetos y enemigo
 - 3 tipos de powerups:
   1. Liefe 
       - ~~Te da 10 puntos de vida~~
-      - Agregar efectos cuando se active
+      - ~~Agregar efectos cuando se active~~
   2. Weapon
       - Te da laser infinito por 5 segundos
       - Agregar efectos cuando se active
   3. Ring 
       - ~~Te da 10 puntos de score~~
-      - Agregar efectos cuando se active
+      - ~~Agregar efectos cuando se active~~
 - obstaculos, agregar asteriodes
 - 3 tipos de enemigos: 
   1. Enemigo fácil
