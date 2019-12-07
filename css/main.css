@@ -80,3 +80,31 @@ body {
   border: none;
   background-color: #ffffff;
 }
+
+.logo-img{
+  position: absolute;
+  transform: translate(50%, 0%);
+}
+
+.copy{
+  position: absolute;
+  bottom: 10px;
+  left: 20px;
+  color: #FFF;
+  font-size: 20px;
+  letter-spacing: 2px;
+}
+/* Heealth bar */
+
+#live .percentage{
+  width: 200px;
+  margin-top: 4.5px;
+  /* background: rgba(246, 71, 71, 1); */
+  height: 16px;
+  display: inline-block;
+}
+#live .percentage .alive {
+  height: 100%;
+  background: rgba(38, 194, 129, 1);
+  display: block;
+}

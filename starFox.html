@@ -22,39 +22,22 @@
     <script src="./libs/tween.js/tween.js"></script>
 
     <script src="starFox.js"></script>
+    <script type="text/javascript">
+     
 
-  <style>
-    #live .percentage{
-      width: 200px;
-      margin-top: 4.5px;
-      /* background: rgba(246, 71, 71, 1); */
-      height: 16px;
-      display: inline-block;
-    }
-    #live .percentage .alive {
-      height: 100%;
-      background: rgba(38, 194, 129, 1);
-      display: block;
-    }
-  </style>
-  <script type="text/javascript">
-  function initControls() {
-    $("#play").click(() => startGame());
-  }
+      $(document).ready(
+        function() {
+          var canvas = document.getElementById("webglcanvas");
 
-  $(document).ready(
-    function() {
-      var canvas = document.getElementById("webglcanvas");
+          //remove Splash after n miliseconds
+          removeSplash(3000);
+          // create the scene
+          createScene(canvas);
+          // initialize the controls
+          initControls();
 
-      //remove Splash after n miliseconds
-      removeSplash(3000);
-      // create the scene
-      createScene(canvas);
-      // initialize the controls
-      initControls();
-
-    }
-  );
+        }
+      );
   </script>
 
   </head>
@@ -69,9 +52,13 @@
             <label for="difficulty">Difficulty 1-10 </label>
             <input id="difficulty" name="difficulty" onchange="setDifficulty()" type="number" max="10" min="1" step="1" value="5">
           </div> -->
+        <img class="logo-img" src="/images/logo.png" alt="">
         <ul class="menu-container">
           <li class="menu-item" onclick="startGame()">Play</li>
         </ul>
+        
+        <p class="copy">&copy; 2019 By Luis Barajas & Daniel Charua</p>
+
       </div>
     </div>
     <div id="container">
@@ -79,6 +66,7 @@
       <div class="game-controls">
         <div id="live">Live: <span class="percentage"><span class="alive"></span></span></div>
         <div id="score">Score: 0 </div>
+        <p>R to restart</p>
       </div>
     </div>
   </body>

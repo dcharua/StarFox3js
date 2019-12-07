@@ -16,6 +16,7 @@ var gameSettings = {
   gameOver: false,
   difficulty: 5,
   live: 100,
+  pause: false,
   backgroundMusic: null
 }
 
@@ -34,6 +35,7 @@ var gameObjects = {
   enemy1: null,
   enemy2: null,
   enemy3: null,
+  asteriod: null,
   enemyBullet: {
     object: null,
     id: 0,
@@ -59,12 +61,16 @@ var id = 0;
 
 // Loaders
 
+function initControls() {
+  $("#play").click(() => startGame());
+}
 
 var currentTime = Date.now();
 
 function loadMTL(mtl, objPath, scale) {
-  var mtlLoader = new THREE.MTLLoader();
-  var objLoader = new THREE.OBJLoader();
+  var loadingManager = new THREE.LoadingManager();
+  var mtlLoader = new THREE.MTLLoader(loadingManager);
+  var objLoader = new THREE.OBJLoader(loadingManager);
   return new Promise((resolve, reject) => {
     mtlLoader.load(mtl, (materials) => {
       console.log(materials)
@@ -175,31 +181,30 @@ function startGame() {
 // main function to animate and update game
 function animate() {
   // if player lost
-  if (!gameSettings.gameOver) {
-    var now = Date.now();
-    var deltat = now - currentTime;
-    currentTime = now;
+  var now = Date.now();
+  var deltat = now - currentTime;
+  currentTime = now;
 
-    // Collider to player
-    playerCollider = new THREE.Box3().setFromObject(gameObjects.player);
-    // we update  each object in the array
-    updateObject(deltat);
-    // animate bullets
-    updateBullets(deltat);
-    // animate enemy bullets
-    updateEnemyBullets(deltat);
-    // Stars
-    updateStars();
-    // Playerr look at mouse
-    target.x = (gameObjects.player.position.x / 100) - mouse.x;
-    target.y = (gameObjects.player.position.y / 100) - mouse.y;
+  // Collider to player
+  playerCollider = new THREE.Box3().setFromObject(gameObjects.player);
+  // we update  each object in the array
+  updateObject(deltat);
+  // animate bullets
+  updateBullets(deltat);
+  // animate enemy bullets
+  updateEnemyBullets(deltat);
+  // Stars
+  updateStars();
+  // Playerr look at mouse
+  target.x = (gameObjects.player.position.x / 100) - mouse.x;
+  target.y = (gameObjects.player.position.y / 100) - mouse.y;
 
-    var rotationPlayer = atan(-target.y, -target.x) + Math.PI / 2;
+  var rotationPlayer = atan(-target.y, -target.x) + Math.PI / 2;
 
-    // Get angle
-    gameObjects.player.rotation.y = rotationPlayer;
-  }
+  // Get angle
+  gameObjects.player.rotation.y = rotationPlayer;
 }
+
 
 function updateObject(deltat) {
   gameObjects.objects.forEach((obj, index) => {
@@ -328,6 +333,8 @@ function checkCollition(obj, index = 0) {
         case 'enemy2':
         case 'enemy3':
           gameSettings.live -= 20;
+          spotLight.color.setHex(0xFFA500);
+          setTimeout(function(){ spotLight.color.setHex(0xffffff); }, 200);
           break;
         case 'enemyBullet':
           gameSettings.live -= 2;
@@ -337,6 +344,8 @@ function checkCollition(obj, index = 0) {
             gameObjects.enemyBullet.bullets.splice(index, 1);
           }
           scene.remove(obj);
+          spotLight.color.setHex(0xFFA500);
+          setTimeout(function(){ spotLight.color.setHex(0xffffff); }, 200);
           break;
         case 'powerUp':
           gameSettings.live += 10;
@@ -394,7 +403,7 @@ function enemyKilled(obj, b, i) {
 
 // Enemy fire bullet towards player
 function enemyFire(obj) {
-  if (!gameSettings.gameOver) {
+  if (!gameSettings.gameOver && !gameSettings.pause) {
     var clone = cloneFbx(gameObjects.enemyBullet.object);
     clone.position.set(obj.position.x, obj.position.y, obj.position.z);
     clone.angle = obj.rotation.y;
@@ -464,13 +473,14 @@ function updateStars() {
 // function to make new objects every n second
 function makeObjects() {
   gameObjects.enemyMaker = window.setInterval(function () {
-    if (!gameSettings.gameOver) {
+    if (!gameSettings.gameOver && !gameSettings.pause) {
       // we dice a random number if its 0 we add to scene
       if (!Math.floor(Math.random() * 4)) cloneObj(gameObjects.enemy1)
       if (!Math.floor(Math.random() * 6)) cloneObj(gameObjects.enemy2)
       if (!Math.floor(Math.random() * 12)) cloneObj(gameObjects.enemy3)
       if (!Math.floor(Math.random() * 10)) cloneObj(gameObjects.powerUp)
       if (!Math.floor(Math.random() * 6)) cloneObj(gameObjects.ring)
+      // if (!Math.floor(Math.random() * 1)) cloneObj(gameObjects.asteriod)
     }
   }, 5000 / gameSettings.difficulty);
 }
@@ -505,7 +515,7 @@ function onMouseMove(event) {
 
 function onMouseClick(event) {
 
-  if (!gameSettings.gameOver) {
+  if (!gameSettings.gameOver && !gameSettings.pause) {
     event.preventDefault()
     shoot();
   }
@@ -538,7 +548,7 @@ function atan(y, x) {
 // function to player shoot a bullet
 function shoot() {
 
-  if (!gameSettings.gameOver) {
+  if (!gameSettings.gameOver && !gameSettings.pause) {
     var clone = cloneFbx(gameObjects.bullet.object);
     clone.position.set(gameObjects.player.position.x, gameObjects.player.position.y, gameObjects.player.position.z);
     clone.angle = gameObjects.player.rotation.y + Math.PI;
@@ -550,6 +560,16 @@ function shoot() {
 
 function onDocumentKeyDown(event) {
   var keyCode = event.which;
+
+  //restart game R key
+  if (keyCode == 82){
+    resetGame();
+  }
+
+  // pause onpause game P key
+  if (keyCode == 80){
+    gameSettings.pause = !gameSettings.pause;
+  }
 
   // BOTON IZQUIERDA
   if (keyCode == 37 && gameObjects.player.position.x > -100) {
@@ -593,7 +613,7 @@ function run() {
   renderer.render(scene, camera);
 
   // If the game is on
-  if (!gameSettings.gameOver) {
+  if (!gameSettings.gameOver && !gameSettings.pause) {
     animate();
   }
 }
@@ -717,12 +737,11 @@ function createScene(canvas) {
   
   // TODO: Load the actual enemies, now repeating the one that loads
   
-  promises.push(loadMTL('models/Catspaw/Catspaw.mtl', 'models/Catspaw/Catspaw.obj', 5))
-  promises.push(loadMTL('models/Catspaw/Catspaw.mtl', 'models/Catspaw/Catspaw.obj', 5))
-  // promises.push(loadMTL('models/Cornerian/Cornerian.mtl', 'models/Cornerian/Cornerian.obj', 3))
-
+  promises.push(loadMTL('models/WolfenII/WolfenII.mtl', 'models/WolfenII/WolfenII.obj', 5))
+  promises.push(loadMTL('models/InvaderII/InvaderII.mtl', 'models/InvaderII/InvaderII.obj', 7))
   promises.push(loadMTL('models/PowerUp/PowerUp.mtl', 'models/PowerUp/PowerUp.obj', 3))
   promises.push(loadMTL('models/Rings/Gold/Gold.mtl', 'models/Rings/Gold/Gold.obj', 3))
+  // promises.push(loadMTL('models/Asteriod/10464_Asteroid_v1_Iterations-2.mtl', 'models/Asteriod/10464_Asteroid_v1_Iterations-2.obj', 3))
   promises.push(loadBullet());
   promises.push(loadEnemyBullet());
   Promise.all(promises).then((objects) => {
@@ -755,6 +774,9 @@ function createScene(canvas) {
 
     gameObjects.ring = objects[5];
     gameObjects.ring.type = "ring";
+
+    // gameObjects.asteriod = objects[6];
+    // gameObjects.asteriod.type = "asteriod";
     scene.add(gameObjects.player)
     run();
   })
