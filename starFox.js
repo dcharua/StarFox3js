@@ -169,6 +169,10 @@ function startGame() {
   // remove objects from scene if any
   gameObjects.objects.forEach(enemy => scene.remove(enemy));
   gameObjects.objects = [];
+  gameObjects.bullet.bullets.forEach(b => scene.remove(b));
+  gameObjects.bullet.bullets = [];
+  gameObjects.enemyBullet.bullets.forEach(b => scene.remove(b));
+  gameObjects.enemyBullet.bullets = [];
   // reset score time and lives in html
   document.getElementById("score").innerText = `Score: ${gameSettings.score.toString()}`;
   // document.getElementById("live").innerHTML = `Live: ${gameSettings.live}`;
@@ -395,10 +399,6 @@ function checkBulletHit(obj) {
 function enemyKilled(obj, b, i) {
   obj.dead = true;
   updateScore(obj.type == "enemy1" ? 2 : obj.type == "enemy2" ? 5 : 10)
-
-  if (obj.type == "enemy3") {
-    // window.clearInterval(obj.fireInterval)
-  }
 }
 
 // Enemy fire bullet towards player
@@ -732,14 +732,17 @@ function createScene(canvas) {
 
   // load Objects
   let promises = []
+  // Player
   promises.push(loadMTL('models/Arwing.mtl', 'models/Arwing.obj', 6))
+  // Enemy1
   promises.push(loadMTL('models/Catspaw/Catspaw.mtl', 'models/Catspaw/Catspaw.obj', 5))
-  
-  // TODO: Load the actual enemies, now repeating the one that loads
-  
+  // Enemy2
   promises.push(loadMTL('models/WolfenII/WolfenII.mtl', 'models/WolfenII/WolfenII.obj', 5))
+  // Enemy3
   promises.push(loadMTL('models/InvaderII/InvaderII.mtl', 'models/InvaderII/InvaderII.obj', 7))
+  // PowerUp
   promises.push(loadMTL('models/PowerUp/PowerUp.mtl', 'models/PowerUp/PowerUp.obj', 3))
+  // Health
   promises.push(loadMTL('models/Rings/Gold/Gold.mtl', 'models/Rings/Gold/Gold.obj', 3))
   // promises.push(loadMTL('models/Asteriod/10464_Asteroid_v1_Iterations-2.mtl', 'models/Asteriod/10464_Asteroid_v1_Iterations-2.obj', 3))
   promises.push(loadBullet());
