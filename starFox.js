@@ -10,11 +10,10 @@ var renderer = null,
 
 // VARIABLES FOR THE GAME TIME
 var gameSettings = {
-  playTime: 60,
   score: 0,
   highScore: 0,
   gameOver: false,
-  difficulty: 5,
+  difficulty: 1,
   live: 100,
   pause: false,
   backgroundMusic: null
@@ -49,14 +48,14 @@ var gameObjects = {
   start: -200,
   end: -20,
   enemyMaker: null,
+  difficultyClock: null,
   bullet: {
     object: null,
     id: 0,
     bullets: [],
     end: -200,
     velocity: 0.20
-  },
-  asteroid: null
+  }
 }
 var id = 0;
 
@@ -74,7 +73,6 @@ function loadMTL(mtl, objPath, scale) {
   var objLoader = new THREE.OBJLoader(loadingManager);
   return new Promise((resolve, reject) => {
     mtlLoader.load(mtl, (materials) => {
-      console.log(materials)
       materials.preload();
       objLoader.setMaterials(materials);
       objLoader.load(objPath, (object) => {
@@ -194,8 +192,10 @@ function resetGame() {
 
   gameSettings.score = 0;
   gameSettings.live = 100;
+  gameSettings.difficulty = 1;
   // clear interval for gameclock and roboto maker
   window.clearInterval(gameObjects.enemyMaker);
+  window.clearInterval(gameObjects.difficultyClock);
 }
 
 // funtion to start the game
@@ -216,6 +216,8 @@ function startGame() {
   // start game - 
   gameSettings.gameOver = false;
   makeObjects();
+  // increase difficulty every 10 seconds
+  gameObjects.difficultyClock = window.setInterval(() => gameSettings.difficulty++, 10000 ); 
 }
 
 // main function to animate and update game
@@ -362,7 +364,7 @@ function checkRemove(obj, index) {
   // enemy gets to the end line
   if (obj.position.y <= -50 || obj.position.z >= 100) {
     scene.remove(obj);
-    gameObjects.objects.splice(index, 1);
+    gameObjects.objects.splice(gameObjects.objects.findIndex(o => o.id === obj.id), 1);
 
     if (obj.type == "enemy3") {
       // window.clearInterval(obj.fireInterval)
@@ -527,14 +529,14 @@ function makeObjects() {
   gameObjects.enemyMaker = window.setInterval(function () {
     if (!gameSettings.gameOver && !gameSettings.pause) {
       // we dice a random number if its 0 we add to scene
-      if (!Math.floor(Math.random() * 4)) cloneObj(gameObjects.enemy1)
-      if (!Math.floor(Math.random() * 6)) cloneObj(gameObjects.enemy2)
-      if (!Math.floor(Math.random() * 12)) cloneObj(gameObjects.enemy3)
-      if (!Math.floor(Math.random() * 10)) cloneObj(gameObjects.powerUp)
-      if (!Math.floor(Math.random() * 6)) cloneObj(gameObjects.ring)
-      if (!Math.floor(Math.random() * 2)) cloneObj(gameObjects.asteroid)
+      if (!Math.floor(Math.random() * 4  / gameSettings.difficulty)) cloneObj(gameObjects.enemy1)
+      if (!Math.floor(Math.random() * 6  / gameSettings.difficulty)) cloneObj(gameObjects.enemy2)
+      if (!Math.floor(Math.random() * 12 / gameSettings.difficulty)) cloneObj(gameObjects.enemy3)
+      if (!Math.floor(Math.random() * 10 / gameSettings.difficulty)) cloneObj(gameObjects.powerUp)
+      if (!Math.floor(Math.random() * 6  / gameSettings.difficulty)) cloneObj(gameObjects.ring)
+      if (!Math.floor(Math.random() * 2  / gameSettings.difficulty)) cloneObj(gameObjects.asteroid)
     }
-  }, 5000 / gameSettings.difficulty);
+  }, 5000);
 }
 
 // function to clone object 
@@ -550,16 +552,13 @@ function cloneObj(obj) {
     clone.zigZagVelocity = obj.zigZagVelocity
     clone.zigZagDirection = obj.zigZagDirection
     clone.zigZagMax = Math.random() * 10 + 15;
-
-    // Enemy fire bullet certain time interval
-    // clone.fireInterval = setInterval(() => { enemyFire(obj) }, 500);
   }
   clone.lives = obj.lives
   clone.velocity = obj.velocity
   gameObjects.objects.push(clone);
 }
 
-function cloneAsteroid(obj) {
+function cloneAsteroid() {
   var clone = cloneFbx(gameObjects.asteroid);
   // we set randomly in x by its right and left max, and in the z start line
   clone.startX = Math.floor(Math.random() * (gameObjects.right - gameObjects.left + 1)) + gameObjects.left
@@ -636,16 +635,11 @@ function onDocumentKeyDown(event) {
   // BOTON IZQUIERDA
   if (keyCode == 37 && gameObjects.player.position.x > -100) {
     gameObjects.player.position.x -= 3;
-    // player.object.rotation.z = -Math.PI / 5;
-    // playerAnimator[2].start();
   }
 
   // BOTON DERECHA
   else if (keyCode == 39 && gameObjects.player.position.x < 100) {
     gameObjects.player.position.x += 3;
-    // player.object.rotation.z = Math.PI / 5;
-    // playerAnimator[3].start();
-
   }
 }
 
@@ -660,10 +654,6 @@ function onWindowResize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-// function to change game difficulty
-function setDifficulty() {
-  gameSettings.difficulty = document.getElementById("difficulty").value;
-}
 
 // functon to start game
 function run() {
