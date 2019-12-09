@@ -37,11 +37,6 @@ Se ocuparan colliders para detectar los disparos, destruir los objetos y enemigo
 
 ### Avances 2
 - ~~Agragr música de fondo~~
-- Cambiar modelo de balas
-- Agregar efectos musicales en:
-  - Disparo
-  - Bullet hit enemy
-  - Choque de enemigo con jugador
 - 2 tipos de powerups:
   1. Liefe 
       - ~~Te da 10 puntos de vida~~
@@ -71,4 +66,3 @@ Se ocuparan colliders para detectar los disparos, destruir los objetos y enemigo
 - amentando la dificultad con el tiempo
 - ~~100 de vida~~
 - ~~interfaz con menu~~
-- animacion de explosion 
