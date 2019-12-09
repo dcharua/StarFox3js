@@ -35,7 +35,7 @@ var gameObjects = {
   enemy1: null,
   enemy2: null,
   enemy3: null,
-  asteriod: null,
+  asteroid: null,
   enemyBullet: {
     object: null,
     id: 0,
@@ -55,7 +55,8 @@ var gameObjects = {
     bullets: [],
     end: -200,
     velocity: 0.20
-  }
+  },
+  asteroid: null
 }
 var id = 0;
 
@@ -90,6 +91,23 @@ function loadMTL(mtl, objPath, scale) {
   }, null, error => reject(error));
 }
 
+function loadObj(objPath, scale) {
+  var loadingManager = new THREE.LoadingManager();
+  var objLoader = new THREE.OBJLoader(loadingManager);
+  return new Promise((resolve, reject) => {
+    objLoader.load(objPath, (object) => {
+      object.scale.set(scale, scale, scale);
+      object.traverse(function (child) {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
+      resolve(object)
+    }, null, error => reject(error));
+  }, null, error => reject(error));
+}
+
 function loadBullet() {
   return new Promise((resolve, reject) => {
     var loader = new THREE.FBXLoader();
@@ -121,6 +139,24 @@ function loadEnemyBullet() {
         }
       });
       gameObjects.enemyBullet.object = object;
+      resolve("done")
+    })
+  }, null, error => reject(error));
+}
+
+function loadAsteroid() {
+  return new Promise((resolve, reject) => {
+    var loader = new THREE.FBXLoader();
+    loader.load('models/Asteroid.fbx', object => {
+      object.scale.set(2, 2, 2);
+
+      object.traverse(function (child) {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
+      gameObjects.asteroid = object;
       resolve("done")
     })
   }, null, error => reject(error));
@@ -311,6 +347,13 @@ function updateObject(deltat) {
         checkRemove(obj, index);
         checkCollition(obj);
         break;
+
+      case 'asteroid':
+        // Collider to enemy
+        obj.position.z += deltat * 0.04;
+        checkRemove(obj, index);
+        checkCollition(obj);
+        break;
     }
   })
 }
@@ -366,6 +409,15 @@ function checkCollition(obj, index = 0) {
           updateScore(10)
 
           obj.scale.set(8, 8, 8);
+          break;
+        case 'asteroid':
+          gameSettings.live -= 10;
+          spotLight.color.setHex(0xFFA500);
+          setTimeout(function(){ spotLight.color.setHex(0xffffff); }, 200);
+
+          scene.remove(obj);
+          gameObjects.objects.splice(index, 1);
+
           break;
       }
       updateLive();
@@ -480,7 +532,7 @@ function makeObjects() {
       if (!Math.floor(Math.random() * 12)) cloneObj(gameObjects.enemy3)
       if (!Math.floor(Math.random() * 10)) cloneObj(gameObjects.powerUp)
       if (!Math.floor(Math.random() * 6)) cloneObj(gameObjects.ring)
-      // if (!Math.floor(Math.random() * 1)) cloneObj(gameObjects.asteriod)
+      if (!Math.floor(Math.random() * 2)) cloneObj(gameObjects.asteroid)
     }
   }, 5000 / gameSettings.difficulty);
 }
@@ -504,6 +556,16 @@ function cloneObj(obj) {
   }
   clone.lives = obj.lives
   clone.velocity = obj.velocity
+  gameObjects.objects.push(clone);
+}
+
+function cloneAsteroid(obj) {
+  var clone = cloneFbx(gameObjects.asteroid);
+  // we set randomly in x by its right and left max, and in the z start line
+  clone.startX = Math.floor(Math.random() * (gameObjects.right - gameObjects.left + 1)) + gameObjects.left
+  clone.position.set(clone.startX, -5, gameObjects.start);
+  scene.add(clone);
+  clone.id = id++;
   gameObjects.objects.push(clone);
 }
 
@@ -744,9 +806,13 @@ function createScene(canvas) {
   promises.push(loadMTL('models/PowerUp/PowerUp.mtl', 'models/PowerUp/PowerUp.obj', 3))
   // Health
   promises.push(loadMTL('models/Rings/Gold/Gold.mtl', 'models/Rings/Gold/Gold.obj', 3))
-  // promises.push(loadMTL('models/Asteriod/10464_Asteroid_v1_Iterations-2.mtl', 'models/Asteriod/10464_Asteroid_v1_Iterations-2.obj', 3))
+  // Asteroid
+  promises.push(loadObj('models/Asteroid.obj', 0.1));
+
   promises.push(loadBullet());
   promises.push(loadEnemyBullet());
+
+
   Promise.all(promises).then((objects) => {
 
     gameObjects.player = objects[0];
@@ -778,8 +844,9 @@ function createScene(canvas) {
     gameObjects.ring = objects[5];
     gameObjects.ring.type = "ring";
 
-    // gameObjects.asteriod = objects[6];
-    // gameObjects.asteriod.type = "asteriod";
+    gameObjects.asteroid = objects[6];
+    gameObjects.asteroid.type = "asteroid";
+
     scene.add(gameObjects.player)
     run();
   })

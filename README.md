@@ -37,6 +37,7 @@ Se ocuparan colliders para detectar los disparos, destruir los objetos y enemigo
 
 ### Avances 2
 - ~~Agragr música de fondo~~
+- Cambiar modelo de balas
 - Agregar efectos musicales en:
   - Disparo
   - Bullet hit enemy
@@ -49,6 +50,7 @@ Se ocuparan colliders para detectar los disparos, destruir los objetos y enemigo
       - ~~Te da 10 puntos de score~~
       - ~~Agregar efectos cuando se active~~
 - Agregar asteriodes
+  - Daño choque con jugador: 10 puntos
 - 3 tipos de enemigos: 
   1. Enemigo fácil
       - ~~Va recto~~
